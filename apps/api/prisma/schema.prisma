@@ -1,0 +1,508 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum RoleName {
+  SUPER_ADMIN
+  ADMIN
+  STAFF
+  CLIENT
+}
+
+enum ApplicationStatus {
+  DRAFT
+  ACTIVE
+  ON_HOLD
+  COMPLETED
+  CANCELLED
+  REJECTED
+}
+
+enum StepStatus {
+  NOT_STARTED
+  IN_PROGRESS
+  PENDING
+  COMPLETED
+  DELAYED
+  ON_HOLD
+  SKIPPED
+}
+
+enum DocumentStatus {
+  NOT_SUBMITTED
+  RECEIVED
+  UNDER_REVIEW
+  VERIFIED
+  REJECTED
+  CORRECTION_REQUIRED
+  RESUBMITTED
+  EXPIRED
+}
+
+enum PaymentMethod {
+  CASH
+  BANK_TRANSFER
+  BKASH
+  NAGAD
+  OTHER
+}
+
+enum PaymentStatus {
+  PENDING
+  RECEIVED
+  REVERSED
+}
+
+enum AdjustmentType {
+  CORRECTION
+  REVERSAL
+  DISCOUNT
+}
+
+// 1. Roles
+model Role {
+  id          String           @id @default(uuid())
+  name        RoleName         @unique
+  description String?
+  users       User[]
+  permissions RolePermission[]
+  createdAt   DateTime         @default(now()) @map("created_at")
+  updatedAt   DateTime         @updatedAt @map("updated_at")
+
+  @@map("roles")
+}
+
+// 2. Permissions
+model Permission {
+  id          String           @id @default(uuid())
+  code        String           @unique
+  description String?
+  module      String
+  roles       RolePermission[]
+  createdAt   DateTime         @default(now()) @map("created_at")
+
+  @@map("permissions")
+}
+
+// 3. Role Permissions
+model RolePermission {
+  id           String     @id @default(uuid())
+  roleId       String     @map("role_id")
+  permissionId String     @map("permission_id")
+  role         Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@unique([roleId, permissionId])
+  @@map("role_permissions")
+}
+
+// 4. Users
+model User {
+  id                  String                  @id @default(uuid())
+  identifier          String                  @unique // Normalized login identifier (Passport number for clients, email/username for staff/admin)
+  email               String?                 @unique
+  passwordHash        String                  @map("password_hash")
+  roleId              String                  @map("role_id")
+  role                Role                    @relation(fields: [roleId], references: [id])
+  isActive            Boolean                 @default(true) @map("is_active")
+  mustChangePassword  Boolean                 @default(false) @map("must_change_password")
+  failedLoginAttempts Int                     @default(0) @map("failed_login_attempts")
+  lockedUntil         DateTime?               @map("locked_until")
+  lastLoginAt         DateTime?               @map("last_login_at")
+  createdAt           DateTime                @default(now()) @map("created_at")
+  updatedAt           DateTime                @updatedAt @map("updated_at")
+
+  clientProfile       Client?
+  staffProfile        StaffProfile?
+  auditLogs           AuditLog[]
+  notifications       Notification[]
+  notificationPref    NotificationPreference?
+
+  @@index([identifier])
+  @@index([roleId])
+  @@map("users")
+}
+
+// 5. Clients
+model Client {
+  id                String            @id @default(uuid())
+  userId            String            @unique @map("user_id")
+  user              User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  clientCode        String            @unique @map("client_code")
+  fullName          String            @map("full_name")
+  dateOfBirth       DateTime          @map("date_of_birth")
+  nidEncrypted      String            @map("nid_encrypted")
+  nidMasked         String            @map("nid_masked")
+  passportEncrypted String            @map("passport_encrypted")
+  passportMasked    String            @map("passport_masked")
+  phone             String
+  email             String?
+  address           String?
+  avatarUrl         String?           @map("avatar_url")
+  emergencyContact  String?           @map("emergency_contact")
+  isArchived        Boolean           @default(false) @map("is_archived")
+  createdAt         DateTime          @default(now()) @map("created_at")
+  updatedAt         DateTime          @updatedAt @map("updated_at")
+
+  applications      Application[]
+  documents         Document[]
+  payments          Payment[]
+  appointments      Appointment[]
+  notes             ClientNote[]
+
+  @@index([clientCode])
+  @@index([phone])
+  @@map("clients")
+}
+
+// 6. Staff Profiles
+model StaffProfile {
+  id          String   @id @default(uuid())
+  userId      String   @unique @map("user_id")
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  employeeId  String   @unique @map("employee_id")
+  fullName    String   @map("full_name")
+  designation String
+  phone       String
+  email       String   @unique
+  isArchived  Boolean  @default(false) @map("is_archived")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  assignments ApplicationAssignment[]
+  assignedSteps ApplicationStep[]     @relation("StaffAssignedSteps")
+  clientNotes ClientNote[]
+
+  @@index([employeeId])
+  @@map("staff_profiles")
+}
+
+// 7. Countries
+model Country {
+  id             String         @id @default(uuid())
+  name           String         @unique
+  code           String         @unique // ISO 2 or 3 letters, e.g. MYS, CYP, BLR
+  flagEmoji      String?        @map("flag_emoji")
+  description    String?
+  isActive       Boolean        @default(true) @map("is_active")
+  createdAt      DateTime       @default(now()) @map("created_at")
+  updatedAt      DateTime       @updatedAt @map("updated_at")
+
+  visaCategories VisaCategory[]
+  applications   Application[]
+  templates      WorkflowTemplate[]
+
+  @@map("countries")
+}
+
+// 8. Visa Categories
+model VisaCategory {
+  id                    String             @id @default(uuid())
+  countryId             String             @map("country_id")
+  country               Country            @relation(fields: [countryId], references: [id], onDelete: Cascade)
+  name                  String             // e.g., Work Permit, Student Visa, Tourist Visa
+  code                  String             // e.g. WP, ST, TR
+  description           String?
+  defaultProcessingDays Int?               @map("default_processing_days")
+  isActive              Boolean            @default(true) @map("is_active")
+  createdAt             DateTime           @default(now()) @map("created_at")
+  updatedAt             DateTime           @updatedAt @map("updated_at")
+
+  applications          Application[]
+  templates             WorkflowTemplate[]
+
+  @@unique([countryId, code])
+  @@map("visa_categories")
+}
+
+// 9. Applications
+model Application {
+  id              String                  @id @default(uuid())
+  applicationCode String                  @unique @map("application_code") // e.g. TVG-2026-0001
+  clientId        String                  @map("client_id")
+  client          Client                  @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  countryId       String                  @map("country_id")
+  country         Country                 @relation(fields: [countryId], references: [id])
+  visaCategoryId  String                  @map("visa_category_id")
+  visaCategory    VisaCategory            @relation(fields: [visaCategoryId], references: [id])
+  status          ApplicationStatus       @default(ACTIVE)
+  applicationDate DateTime                @default(now()) @map("application_date")
+  internalNotes   String?                 @map("internal_notes")
+  createdById     String?                 @map("created_by_id")
+  createdAt       DateTime                @default(now()) @map("created_at")
+  updatedAt       DateTime                @updatedAt @map("updated_at")
+
+  assignedStaff   ApplicationAssignment[]
+  steps           ApplicationStep[]
+  documents       Document[]
+  payments        Payment[]
+  appointments    Appointment[]
+
+  @@index([clientId])
+  @@index([status])
+  @@index([applicationCode])
+  @@map("applications")
+}
+
+// 10. Application Assignments
+model ApplicationAssignment {
+  id            String       @id @default(uuid())
+  applicationId String       @map("application_id")
+  staffId       String       @map("staff_id")
+  assignedById  String?      @map("assigned_by_id")
+  assignedAt    DateTime     @default(now()) @map("assigned_at")
+
+  application   Application  @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  staff         StaffProfile @relation(fields: [staffId], references: [id], onDelete: Cascade)
+
+  @@unique([applicationId, staffId])
+  @@map("application_assignments")
+}
+
+// 11. Workflow Templates
+model WorkflowTemplate {
+  id             String                 @id @default(uuid())
+  name           String                 // e.g. "Malaysia Work Permit Workflow"
+  description    String?
+  countryId      String?                @map("country_id")
+  country        Country?               @relation(fields: [countryId], references: [id])
+  visaCategoryId String?                @map("visa_category_id")
+  visaCategory   VisaCategory?          @relation(fields: [visaCategoryId], references: [id])
+  isActive       Boolean                @default(true) @map("is_active")
+  createdAt      DateTime               @default(now()) @map("created_at")
+  updatedAt      DateTime               @updatedAt @map("updated_at")
+
+  steps          WorkflowTemplateStep[]
+
+  @@map("workflow_templates")
+}
+
+// 12. Workflow Template Steps
+model WorkflowTemplateStep {
+  id                 String           @id @default(uuid())
+  workflowTemplateId String           @map("workflow_template_id")
+  workflowTemplate   WorkflowTemplate @relation(fields: [workflowTemplateId], references: [id], onDelete: Cascade)
+  stepName           String           @map("step_name")
+  description        String?
+  sortOrder          Int              @map("sort_order")
+  estimatedDays      Int?             @map("estimated_days")
+  clientInstructions String?          @map("client_instructions")
+  createdAt          DateTime         @default(now()) @map("created_at")
+  updatedAt          DateTime         @updatedAt @map("updated_at")
+
+  @@index([workflowTemplateId, sortOrder])
+  @@map("workflow_template_steps")
+}
+
+// 13. Application Steps
+model ApplicationStep {
+  id                  String                   @id @default(uuid())
+  applicationId       String                   @map("application_id")
+  application         Application              @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  stepName            String                   @map("step_name")
+  description         String?
+  sortOrder           Int                      @map("sort_order")
+  status              StepStatus               @default(NOT_STARTED)
+  scheduledDate       DateTime?                @map("scheduled_date")
+  deadline            DateTime?
+  completedDate       DateTime?                @map("completed_date")
+  assignedStaffId     String?                  @map("assigned_staff_id")
+  assignedStaff       StaffProfile?            @relation("StaffAssignedSteps", fields: [assignedStaffId], references: [id])
+  clientInstructions  String?                  @map("client_instructions")
+  internalNotes       String?                  @map("internal_notes")
+  isPublishedToClient Boolean                  @default(true) @map("is_published_to_client")
+  completedById       String?                  @map("completed_by_id")
+  createdAt           DateTime                 @default(now()) @map("created_at")
+  updatedAt           DateTime                 @updatedAt @map("updated_at")
+
+  history             ApplicationStepHistory[]
+
+  @@index([applicationId, sortOrder])
+  @@map("application_steps")
+}
+
+// 14. Application Step History
+model ApplicationStepHistory {
+  id                String          @id @default(uuid())
+  applicationStepId String          @map("application_step_id")
+  applicationStep   ApplicationStep @relation(fields: [applicationStepId], references: [id], onDelete: Cascade)
+  previousStatus    StepStatus      @map("previous_status")
+  newStatus         StepStatus      @map("new_status")
+  changedById       String?         @map("changed_by_id")
+  changeNotes       String?         @map("change_notes")
+  createdAt         DateTime        @default(now()) @map("created_at")
+
+  @@index([applicationStepId])
+  @@map("application_step_history")
+}
+
+// 15. Document Types
+model DocumentType {
+  id          String     @id @default(uuid())
+  name        String     @unique // e.g. Passport Copy, NID Copy, Medical Report
+  code        String     @unique // e.g. PASSPORT, NID, MEDICAL
+  description String?
+  isRequired  Boolean    @default(false) @map("is_required")
+  createdAt   DateTime   @default(now()) @map("created_at")
+  updatedAt   DateTime   @updatedAt @map("updated_at")
+
+  documents   Document[]
+
+  @@map("document_types")
+}
+
+// 16. Documents
+model Document {
+  id                String         @id @default(uuid())
+  applicationId     String         @map("application_id")
+  application       Application    @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  clientId          String         @map("client_id")
+  client            Client         @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  documentTypeId    String         @map("document_type_id")
+  documentType      DocumentType   @relation(fields: [documentTypeId], references: [id])
+  fileName          String         @map("file_name") // Stored safe name
+  originalName      String         @map("original_name")
+  storagePath       String         @map("storage_path") // Internal private storage path or S3 key
+  fileSize          Int            @map("file_size") // In bytes
+  mimeType          String         @map("mime_type")
+  status            DocumentStatus @default(NOT_SUBMITTED)
+  verificationNotes String?        @map("verification_notes")
+  verifiedById      String?        @map("verified_by_id")
+  verifiedAt        DateTime?      @map("verified_at")
+  uploadedById      String?        @map("uploaded_by_id")
+  createdAt         DateTime       @default(now()) @map("created_at")
+  updatedAt         DateTime       @updatedAt @map("updated_at")
+
+  @@index([applicationId])
+  @@index([clientId])
+  @@map("documents")
+}
+
+// 17. Payments
+model Payment {
+  id                   String              @id @default(uuid())
+  receiptNumber        String              @unique @map("receipt_number") // e.g. REC-2026-0001
+  applicationId        String              @map("application_id")
+  application          Application         @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  clientId             String              @map("client_id")
+  client               Client              @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  amount               Decimal             @db.Decimal(12, 2)
+  paymentMethod        PaymentMethod       @map("payment_method")
+  transactionReference String?             @map("transaction_reference")
+  paymentDate          DateTime            @map("payment_date")
+  status               PaymentStatus       @default(RECEIVED)
+  internalNotes        String?             @map("internal_notes")
+  recordedById         String              @map("recorded_by_id")
+  createdAt            DateTime            @default(now()) @map("created_at")
+  updatedAt            DateTime            @updatedAt @map("updated_at")
+
+  adjustments          PaymentAdjustment[]
+
+  @@index([applicationId])
+  @@index([clientId])
+  @@index([receiptNumber])
+  @@map("payments")
+}
+
+// 18. Payment Adjustments
+model PaymentAdjustment {
+  id             String         @id @default(uuid())
+  paymentId      String         @map("payment_id")
+  payment        Payment        @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+  adjustmentType AdjustmentType @map("adjustment_type")
+  amount         Decimal        @db.Decimal(12, 2)
+  reason         String
+  createdById    String         @map("created_by_id")
+  createdAt      DateTime       @default(now()) @map("created_at")
+
+  @@index([paymentId])
+  @@map("payment_adjustments")
+}
+
+// 19. Notifications
+model Notification {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title     String
+  message   String
+  type      String   @default("INFO") // INFO, WARNING, SUCCESS, URGENT
+  isRead    Boolean  @default(false) @map("is_read")
+  linkUrl   String?  @map("link_url")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([userId, isRead])
+  @@map("notifications")
+}
+
+// 20. Notification Preferences
+model NotificationPreference {
+  id           String   @id @default(uuid())
+  userId       String   @unique @map("user_id")
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  emailEnabled Boolean  @default(true) @map("email_enabled")
+  smsEnabled   Boolean  @default(true) @map("sms_enabled")
+  inAppEnabled Boolean  @default(true) @map("in_app_enabled")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  @@map("notification_preferences")
+}
+
+// 21. Appointments
+model Appointment {
+  id              String      @id @default(uuid())
+  clientId        String      @map("client_id")
+  client          Client      @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  applicationId   String?     @map("application_id")
+  application     Application? @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  title           String
+  appointmentDate DateTime    @map("appointment_date")
+  location        String?
+  notes           String?
+  status          String      @default("SCHEDULED") // SCHEDULED, COMPLETED, CANCELLED
+  scheduledById   String?     @map("scheduled_by_id")
+  createdAt       DateTime    @default(now()) @map("created_at")
+  updatedAt       DateTime    @updatedAt @map("updated_at")
+
+  @@index([clientId])
+  @@map("appointments")
+}
+
+// 22. Client Notes
+model ClientNote {
+  id        String       @id @default(uuid())
+  clientId  String       @map("client_id")
+  client    Client       @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  staffId   String       @map("staff_id")
+  staff     StaffProfile @relation(fields: [staffId], references: [id], onDelete: Cascade)
+  note      String
+  isPrivate Boolean      @default(true) @map("is_private")
+  createdAt DateTime     @default(now()) @map("created_at")
+
+  @@index([clientId])
+  @@map("client_notes")
+}
+
+// 23. Audit Logs
+model AuditLog {
+  id         String   @id @default(uuid())
+  userId     String?  @map("user_id")
+  user       User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  action     String   // e.g. "CLIENT_CREATED", "STATUS_CHANGED", "PAYMENT_RECORDED"
+  entityType String   @map("entity_type") // e.g. "CLIENT", "APPLICATION", "DOCUMENT", "PAYMENT"
+  entityId   String?  @map("entity_id")
+  details    Json?
+  ipAddress  String?  @map("ip_address")
+  userAgent  String?  @map("user_agent")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  @@index([userId])
+  @@index([entityType, entityId])
+  @@index([createdAt])
+  @@map("audit_logs")
+}

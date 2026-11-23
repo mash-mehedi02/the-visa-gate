@@ -1,0 +1,34 @@
+{
+  "name": "the-visa-gate",
+  "version": "1.0.0",
+  "private": true,
+  "description": "The Visa Gate - Corporate Website & Visa Management System",
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "scripts": {
+    "dev": "npm run dev --workspaces --if-present",
+    "dev:web": "npm run dev --workspace=@thevisagate/web",
+    "dev:api": "npm run dev --workspace=@thevisagate/api",
+    "build": "npm run build --workspaces --if-present",
+    "build:shared": "npm run build --workspace=@thevisagate/shared",
+    "build:api": "npm run build --workspace=@thevisagate/api",
+    "build:web": "npm run build --workspace=@thevisagate/web",
+    "test": "npm run test --workspaces --if-present",
+    "db:generate": "npm run db:generate --workspace=@thevisagate/api",
+    "db:migrate": "npm run db:migrate --workspace=@thevisagate/api",
+    "db:seed": "npm run db:seed --workspace=@thevisagate/api"
+  },
+  "keywords": [
+    "visa",
+    "consultancy",
+    "management",
+    "tracking",
+    "express",
+    "react",
+    "typescript"
+  ],
+  "author": "The Visa Gate Team",
+  "license": "UNLICENSED"
+}
