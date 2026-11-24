@@ -101,7 +101,7 @@ export const AppRoutes: React.FC = () => {
       <Route
         path="/admin"
         element={
-          <ProtectedRoute allowedRoles={[RoleName.ADMIN, RoleName.STAFF]}>
+          <ProtectedRoute allowedRoles={[RoleName.ADMIN, RoleName.SUPER_ADMIN, RoleName.STAFF]}>
             <AdminLayout />
           </ProtectedRoute>
         }
@@ -118,7 +118,7 @@ export const AppRoutes: React.FC = () => {
         <Route
           path="countries"
           element={
-            <ProtectedRoute allowedRoles={[RoleName.ADMIN]}>
+            <ProtectedRoute allowedRoles={[RoleName.ADMIN, RoleName.SUPER_ADMIN]}>
               <CountriesAdminPage />
             </ProtectedRoute>
           }
@@ -126,7 +126,7 @@ export const AppRoutes: React.FC = () => {
         <Route
           path="workflows"
           element={
-            <ProtectedRoute allowedRoles={[RoleName.ADMIN]}>
+            <ProtectedRoute allowedRoles={[RoleName.ADMIN, RoleName.SUPER_ADMIN]}>
               <WorkflowsAdminPage />
             </ProtectedRoute>
           }
@@ -134,7 +134,7 @@ export const AppRoutes: React.FC = () => {
         <Route
           path="staff"
           element={
-            <ProtectedRoute allowedRoles={[RoleName.ADMIN]}>
+            <ProtectedRoute allowedRoles={[RoleName.ADMIN, RoleName.SUPER_ADMIN]}>
               <StaffPage />
             </ProtectedRoute>
           }
@@ -142,7 +142,7 @@ export const AppRoutes: React.FC = () => {
         <Route
           path="audit-logs"
           element={
-            <ProtectedRoute allowedRoles={[RoleName.ADMIN]}>
+            <ProtectedRoute allowedRoles={[RoleName.ADMIN, RoleName.SUPER_ADMIN]}>
               <AuditLogsPage />
             </ProtectedRoute>
           }

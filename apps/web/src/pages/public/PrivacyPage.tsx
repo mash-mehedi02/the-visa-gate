@@ -28,7 +28,7 @@ const privacySections = [
     title: 'Who can see your information',
     body: [
       'Your client portal shows only records linked to your own login. Other clients cannot see your files.',
-      'Staff see the case information needed to process your application. Staff permissions are set individually, and access is logged.',
+      'Staff accounts can open the case records they need in the console, and every action they take is recorded in the audit log.',
       'Administrators manage the system and the staff list, and can see the records they need to supervise a case.',
       'We do not sell your personal information, and we do not share it with third parties for their own marketing.',
     ],
@@ -65,7 +65,7 @@ export const PrivacyPage: React.FC = () => {
           <p className="text-base sm:text-lg text-slate-300 leading-relaxed">
             How The Visa Gate collects, protects and uses your personal information.
           </p>
-          <p className="text-xs text-slate-400">Last reviewed for this website release.</p>
+          <p className="text-xs text-slate-400">Last updated: 24 November 2026.</p>
         </div>
       </section>
 

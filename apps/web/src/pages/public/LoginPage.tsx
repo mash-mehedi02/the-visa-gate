@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import { RoleName } from '@thevisagate/shared';
 import { OFFICE } from '../../components/common/ContactStrip';
+import { Modal } from '../../components/common/Modal';
 
 export const LoginPage: React.FC = () => {
   const [searchParams] = useSearchParams();
@@ -52,20 +53,26 @@ export const LoginPage: React.FC = () => {
   const [currentPass, setCurrentPass] = useState<string>('');
   const [firstNewPass, setFirstNewPass] = useState<string>('');
 
-  const { login, verifyMfa, isAuthenticated, user } = useAuth();
+  const { login, verifyMfa, logout, isAuthenticated, user } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (isAuthenticated && user && (!user.mustChangePassword || user.role === RoleName.CLIENT)) {
-      if (user.role === RoleName.CLIENT) {
-        navigate('/client/portal');
-      } else {
-        navigate('/admin/dashboard');
-      }
-    } else if (isAuthenticated && user && user.mustChangePassword && user.role !== RoleName.CLIENT) {
+    if (!isAuthenticated || !user) return;
+    // A temporary password must be changed at first sign-in, for every role.
+    if (user.mustChangePassword) {
       setShowChangePassword(true);
+    } else if (user.role === RoleName.CLIENT) {
+      navigate('/client/portal');
+    } else {
+      navigate('/admin/dashboard');
     }
   }, [isAuthenticated, user, navigate]);
+
+  // Server password rule: 8+ characters, one uppercase letter, one number
+  // and one symbol. Validate client-side so users are not surprised by a
+  // server error after submitting.
+  const isStrongPassword = (value: string): boolean =>
+    value.length >= 8 && /[A-Z]/.test(value) && /[0-9]/.test(value) && /[^A-Za-z0-9]/.test(value);
 
   const validateLogin = (): boolean => {
     const errors: Record<string, string> = {};
@@ -97,7 +104,7 @@ export const LoginPage: React.FC = () => {
         setMfaToken(response.mfaToken || '');
         setMfaDestination(response.maskedDestination || 'your registered contact');
       } else if (response.user) {
-        if (response.user.mustChangePassword && response.user.role !== RoleName.CLIENT) {
+        if (response.user.mustChangePassword) {
           setShowChangePassword(true);
         } else if (response.user.role === RoleName.CLIENT) {
           navigate('/client/portal');
@@ -143,8 +150,10 @@ export const LoginPage: React.FC = () => {
     e.preventDefault();
     setError(null);
 
-    if (firstNewPass.length < 8) {
-      setFieldErrors({ firstNewPass: 'Your new password must be at least 8 characters long.' });
+    if (!isStrongPassword(firstNewPass)) {
+      setFieldErrors({
+        firstNewPass: 'Use at least 8 characters, including one uppercase letter, one number and one symbol.',
+      });
       return;
     }
     setFieldErrors({});
@@ -194,7 +203,7 @@ export const LoginPage: React.FC = () => {
       setRecoveryStep('reset');
       setSuccessMsg(
         res.message ||
-          'If those details match an account, a password reset link has been sent to the contact registered on the account.'
+          'If those details match an account, a password reset token has been sent to the contact registered on the account.'
       );
     } catch (err: any) {
       setError(err.message || 'We could not verify those details. Please check and try again.');
@@ -211,8 +220,9 @@ export const LoginPage: React.FC = () => {
     if (!recoveryToken.trim()) {
       errors.recoveryToken = 'Paste the reset token we sent you.';
     }
-    if (newPassword.length < 8) {
-      errors.newPassword = 'Your new password must be at least 8 characters long.';
+    if (!isStrongPassword(newPassword)) {
+      errors.newPassword =
+        'Use at least 8 characters, including one uppercase letter, one number and one symbol.';
     }
     setFieldErrors(errors);
     if (Object.keys(errors).length > 0) return;
@@ -265,11 +275,10 @@ export const LoginPage: React.FC = () => {
 
             {/* Portal Switch Tabs */}
             {!mfaRequired && !showRecovery && (
-              <div role="tablist" aria-label="Choose portal" className="mt-6 flex bg-white/10 p-1 rounded-lg">
+              <div aria-label="Choose portal" className="mt-6 flex bg-white/10 p-1 rounded-lg">
                 <button
                   type="button"
-                  role="tab"
-                  aria-selected={activePortal === 'client'}
+                  aria-pressed={activePortal === 'client'}
                   onClick={() => switchPortal('client')}
                   className={`flex-1 py-2.5 rounded-md text-xs font-bold transition-all flex items-center justify-center gap-1.5 min-h-[44px] ${
                     activePortal === 'client'
@@ -282,8 +291,7 @@ export const LoginPage: React.FC = () => {
                 </button>
                 <button
                   type="button"
-                  role="tab"
-                  aria-selected={activePortal === 'staff'}
+                  aria-pressed={activePortal === 'staff'}
                   onClick={() => switchPortal('staff')}
                   className={`flex-1 py-2.5 rounded-md text-xs font-bold transition-all flex items-center justify-center gap-1.5 min-h-[44px] ${
                     activePortal === 'staff'
@@ -359,6 +367,10 @@ export const LoginPage: React.FC = () => {
                       {fieldErrors.mfaCode}
                     </p>
                   )}
+                  <p className="field-hint text-center">
+                    The code expires 10 minutes after it is sent. Didn&apos;t get one? Cancel and sign in
+                    again to request a new code.
+                  </p>
                 </div>
 
                 <button
@@ -594,7 +606,7 @@ export const LoginPage: React.FC = () => {
                 <div>
                   <div className="flex items-center justify-between gap-3 mb-1.5">
                     <label htmlFor="login-password" className="field-label mb-0">
-                      {activePortal === 'client' ? 'National ID (NID) Number or Password *' : 'Password *'}
+                      {activePortal === 'client' ? 'Password *' : 'Password *'}
                     </label>
                     <button
                       type="button"
@@ -605,7 +617,7 @@ export const LoginPage: React.FC = () => {
                         setSuccessMsg(null);
                         setFieldErrors({});
                       }}
-                      className="text-[11px] font-semibold text-brand-navy hover:underline min-h-[36px]"
+                      className="text-xs font-semibold text-brand-navy hover:underline min-h-[44px]"
                     >
                       Forgot password?
                     </button>
@@ -620,7 +632,7 @@ export const LoginPage: React.FC = () => {
                       required
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
-                      placeholder={activePortal === 'client' ? 'Enter your NID or password' : 'Enter your password'}
+                      placeholder={activePortal === 'client' ? 'Enter your password' : 'Enter your password'}
                       autoComplete="current-password"
                       aria-invalid={!!fieldErrors.password}
                       aria-describedby={fieldErrors.password ? 'login-password-error' : undefined}
@@ -644,7 +656,7 @@ export const LoginPage: React.FC = () => {
                   ) : (
                     <p className="field-hint">
                       {activePortal === 'client'
-                        ? 'Enter the National ID (NID) registered with your application, or your password.'
+                        ? 'Enter your portal password. First sign-in uses the temporary password given to you by the office — you will be asked to change it right away.'
                         : 'Enter your account password.'}
                     </p>
                   )}
@@ -662,10 +674,10 @@ export const LoginPage: React.FC = () => {
                 </button>
 
                 {activePortal === 'client' && (
-                  <div className="flex items-start gap-2.5 p-3 rounded-lg bg-slate-50 border border-slate-200 text-[11px] text-slate-600 leading-relaxed">
+                  <div className="flex items-start gap-2.5 p-3 rounded-lg bg-slate-50 border border-slate-200 text-xs text-slate-600 leading-relaxed">
                     <Info className="w-3.5 h-3.5 text-brand-gold-dark shrink-0 mt-0.5" />
                     <span>
-                      Track your visa application anytime using your registered Passport Number and National ID (NID) number. If you need any assistance, please contact our support team.
+                      Track your visa application anytime using your registered passport number and portal password. If you need any assistance, please contact our support team.
                     </span>
                   </div>
                 )}
@@ -697,6 +709,67 @@ export const LoginPage: React.FC = () => {
           </p>
         </div>
       </div>
+
+      {/* Forced password change (first sign-in / temporary password). Closing
+          the dialog signs the user out: nobody continues on a temporary password. */}
+      <Modal
+        isOpen={showChangePassword}
+        onClose={() => {
+          setShowChangePassword(false);
+          logout();
+        }}
+        title="Set a new password"
+        description="For your security, a temporary password must be changed at first sign-in. Closing this dialog signs you out."
+        dismissible={false}
+      >
+        <form onSubmit={handleFirstPasswordChange} noValidate className="space-y-4">
+          <div>
+            <label htmlFor="first-current-pass" className="field-label">
+              Current (temporary) password *
+            </label>
+            <input
+              id="first-current-pass"
+              type="password"
+              required
+              value={currentPass}
+              onChange={(e) => setCurrentPass(e.target.value)}
+              autoComplete="current-password"
+              className="field-input"
+            />
+          </div>
+          <div>
+            <label htmlFor="first-new-pass" className="field-label">
+              New password *
+            </label>
+            <input
+              id="first-new-pass"
+              type="password"
+              required
+              value={firstNewPass}
+              onChange={(e) => setFirstNewPass(e.target.value)}
+              autoComplete="new-password"
+              aria-invalid={!!fieldErrors.firstNewPass}
+              aria-describedby={`first-new-pass-hint${fieldErrors.firstNewPass ? ' first-new-pass-error' : ''}`}
+              className={`field-input ${fieldErrors.firstNewPass ? 'border-red-400' : ''}`}
+            />
+            <p id="first-new-pass-hint" className="field-hint">
+              At least 8 characters, including one uppercase letter, one number and one symbol.
+            </p>
+            {fieldErrors.firstNewPass && (
+              <p id="first-new-pass-error" className="field-error" role="alert">
+                {fieldErrors.firstNewPass}
+              </p>
+            )}
+          </div>
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full py-3 px-4 rounded-lg bg-brand-navy text-white text-xs font-bold hover:bg-brand-navy-light transition-all min-h-[48px] disabled:opacity-50"
+          >
+            {loading ? 'Updating password…' : 'Save new password'}
+          </button>
+        </form>
+      </Modal>
     </div>
   );
 };

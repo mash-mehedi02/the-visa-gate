@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, Navigate, useParams } from 'react-router-dom';
 import { api } from '../../services/api';
 import { CONTINENTS_AND_COUNTRIES } from '../../data/continents';
 import {
@@ -298,9 +298,8 @@ export const ServicesPage: React.FC = () => {
     if (formData.fullName.trim().length < 2) {
       errors.fullName = 'Please enter your full name as printed on your passport.';
     }
-    const phoneDigits = formData.phone.replace(/\D/g, '');
-    if (phoneDigits.length < 8) {
-      errors.phone = 'Enter a phone number we can reach you on (at least 8 digits).';
+    if (!/^(\+?880|0)1[3-9]\d{8}$/.test(formData.phone.replace(/[\s-]/g, ''))) {
+      errors.phone = 'Enter a Bangladeshi mobile number, e.g. 01XXXXXXXXX or +880 1XXXXXXXXX.';
     }
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(formData.email.trim())) {
       errors.email = 'Enter a valid email address so we can send your assessment.';
@@ -353,6 +352,11 @@ export const ServicesPage: React.FC = () => {
     }
   };
 
+  // An unknown /services/:id must not silently fall back to the first service.
+  if (id && !servicesData[id]) {
+    return <Navigate to="/services" replace />;
+  }
+
   return (
     <div className="space-y-14 sm:space-y-16 pb-20">
       {/* Header Banner */}
@@ -378,7 +382,7 @@ export const ServicesPage: React.FC = () => {
             aria-label="Visa service categories"
             className="lg:col-span-4 bg-white rounded-xl border border-slate-200/80 p-2 shadow-xs space-y-1 lg:sticky lg:top-24"
           >
-            <div className="px-4 py-3 text-xs font-bold uppercase tracking-wider text-slate-400 border-b border-slate-100">
+            <div className="px-4 py-3 text-xs font-bold uppercase tracking-wider text-slate-500 border-b border-slate-100">
               Select Visa Program
             </div>
             {Object.entries(servicesData).map(([key, svc]) => (
@@ -461,7 +465,7 @@ export const ServicesPage: React.FC = () => {
                       </li>
                     ))}
                   </ul>
-                  <p className="text-[11px] text-slate-500 leading-relaxed pt-1">
+                  <p className="text-xs text-slate-500 leading-relaxed pt-1">
                     Bring the original where possible. Requirements can vary by case, so we confirm the exact list with
                     you at the consultation.
                   </p>
@@ -720,7 +724,7 @@ export const ServicesPage: React.FC = () => {
                     <Send className="w-4 h-4 text-brand-gold" />
                     <span>{submitting ? 'Submitting…' : 'Submit Inquiry'}</span>
                   </button>
-                  <p className="text-[11px] text-slate-500 leading-relaxed">
+                  <p className="text-xs text-slate-500 leading-relaxed">
                     We use your details only to respond to this inquiry. See our{' '}
                     <Link to="/privacy" className="text-brand-navy underline underline-offset-2 font-semibold">
                       privacy policy

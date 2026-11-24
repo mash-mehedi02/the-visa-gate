@@ -8,12 +8,11 @@ export const api = axios.create({
   },
 });
 
-// Intercept requests to add Authorization header from localStorage if cookie is not sent
+// Authentication is cookie-only: the server sets an httpOnly session cookie on
+// sign-in and the browser sends it with every request (withCredentials).
+// No token is ever kept in localStorage, sessionStorage or page state, so a
+// cross-site scripting flaw cannot steal a session token from storage.
 api.interceptors.request.use((config) => {
-  const token = localStorage.getItem('tvg_token');
-  if (token && config.headers) {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
   // When sending FormData, let the browser calculate and set the exact multipart boundary
   if (config.data instanceof FormData && config.headers) {
     delete config.headers['Content-Type'];
@@ -26,11 +25,6 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(
   (response) => response.data,
   (error) => {
-    if (error.response?.status === 401) {
-      // Clear token if expired
-      localStorage.removeItem('tvg_token');
-      localStorage.removeItem('tvg_user');
-    }
     return Promise.reject(error.response?.data || error);
   }
 );

@@ -43,7 +43,7 @@ const termsSections = [
     icon: AlertTriangle,
     title: 'Your responsibilities',
     body: [
-      'Attend scheduled medical, biometric and embassy appointments on time. A missed appointment can restart the process and extend the timeline.',
+      'Attend scheduled medical, biometric and embassy appointments on time. A missed appointment can delay or restart the process and extend the timeline.',
       'Respond promptly to requests for corrections. A delayed document delays the whole file.',
       'Do not travel on a visa that has not been issued, and do not create a separate application outside this consultancy without telling us.',
       'Keep your portal credentials confidential. Anyone with your passport number and password can view your case status.',

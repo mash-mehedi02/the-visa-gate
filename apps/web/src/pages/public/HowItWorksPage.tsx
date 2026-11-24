@@ -108,7 +108,7 @@ export const HowItWorksPage: React.FC = () => {
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div className="bg-brand-bg rounded-lg border border-slate-200/80 p-3.5">
-                      <span className="flex items-center gap-1.5 text-[10px] font-extrabold uppercase tracking-wider text-brand-navy mb-1.5">
+                      <span className="flex items-center gap-1.5 text-xs font-extrabold uppercase tracking-wider text-brand-navy mb-1.5">
                         <ShieldCheck className="w-3.5 h-3.5 text-brand-gold-dark" />
                         <span>What we handle</span>
                       </span>
@@ -116,7 +116,7 @@ export const HowItWorksPage: React.FC = () => {
                     </div>
 
                     <div className="bg-slate-50 rounded-lg border border-slate-200/80 p-3.5">
-                      <span className="flex items-center gap-1.5 text-[10px] font-extrabold uppercase tracking-wider text-brand-navy mb-1.5">
+                      <span className="flex items-center gap-1.5 text-xs font-extrabold uppercase tracking-wider text-brand-navy mb-1.5">
                         <CheckCircle2 className="w-3.5 h-3.5 text-brand-success" />
                         <span>What you need to do</span>
                       </span>
@@ -124,7 +124,7 @@ export const HowItWorksPage: React.FC = () => {
                     </div>
                   </div>
 
-                  <p className="flex items-center gap-1.5 text-[11px] text-slate-500 font-medium">
+                  <p className="flex items-center gap-1.5 text-xs text-slate-500 font-medium">
                     <Clock className="w-3.5 h-3.5 text-brand-gold-dark shrink-0" />
                     <span>{stage.time}</span>
                   </p>

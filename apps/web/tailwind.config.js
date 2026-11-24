@@ -20,7 +20,7 @@ export default {
           'azure-sky': '#E2EEF8',    // Very Soft Azure tint for cards
           gold: '#D6B66E',           // Official Gold Prestige
           'gold-light': '#E8D49E',
-          'gold-dark': '#B89445',
+          'gold-dark': '#8A6D2B',
           bg: '#F8FAFC',             // Ultra-clean high-end slate background
           'light-grey': '#E9EDF3',
           success: '#16856A',
