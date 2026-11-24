@@ -1,7 +1,9 @@
+successfully downloaded text file (SHA: fc968e36c2549991eea83fba4e147c04a6484bc5)
 import React from 'react';
 import { Outlet, Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { LogOut, ShieldCheck, Phone } from 'lucide-react';
+import { LogOut, Phone } from 'lucide-react';
+import { ProfilePic } from '../components/common/ProfilePic';
 import { OFFICE } from '../components/common/ContactStrip';
 import { NotificationBell } from '../components/common/NotificationBell';
 
@@ -46,9 +48,13 @@ export const ClientLayout: React.FC = () => {
               </span>
             </div>
 
-            <div className="w-8 h-8 rounded-full bg-brand-gold/20 flex items-center justify-center border border-brand-gold/30 shrink-0">
-              <ShieldCheck className="w-4 h-4 text-brand-gold" />
-            </div>
+            <ProfilePic
+              src={user?.clientProfile?.avatarUrl}
+              name={user?.name}
+              size="sm"
+              shape="circle"
+              className="border-white/20"
+            />
 
             <NotificationBell />
 

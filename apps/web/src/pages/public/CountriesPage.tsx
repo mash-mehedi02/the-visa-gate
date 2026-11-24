@@ -1,5 +1,7 @@
+successfully downloaded text file (SHA: db116c0900f5f73c593490aedfbbaf0d41c37694)
 import React, { useEffect, useState } from 'react';
 import { api } from '../../services/api';
+import { isCountryVisibleOnWebsite } from '../../services/client-portal';
 import { Link } from 'react-router-dom';
 import {
   Globe2,
@@ -43,7 +45,11 @@ export const CountriesPage: React.FC = () => {
 
       const res: any = await api.get(`/countries?${params.toString()}`);
       if (res.data) {
-        setCountries(res.data);
+        // Honour the admin's website-visibility flag: show only countries
+        // marked visible (showOnWebsite when the API returns it, otherwise
+        // the existing isActive flag). A failed load keeps the existing
+        // error panel — never silently fall back to a hard-coded list.
+        setCountries((res.data as any[]).filter(isCountryVisibleOnWebsite));
         setFetchError(null);
       }
     } catch (err) {

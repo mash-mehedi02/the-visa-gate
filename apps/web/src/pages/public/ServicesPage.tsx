@@ -1,6 +1,8 @@
+successfully downloaded text file (SHA: 9c624357a5fef66e2310953628b9b77a121354e3)
 import React, { useEffect, useState } from 'react';
 import { Link, Navigate, useParams } from 'react-router-dom';
 import { api } from '../../services/api';
+import { listVisibleCountries } from '../../services/client-portal';
 import { CONTINENTS_AND_COUNTRIES } from '../../data/continents';
 import {
   Briefcase,
@@ -45,6 +47,11 @@ export const ServicesPage: React.FC = () => {
     visaType: 'Work Permit',
     message: '',
   });
+  // Codes of the countries the admin has marked visible on the website
+  // (from the public country directory). Null until the directory loads —
+  // while null, or if the load fails, the full static list stays available
+  // so the inquiry form keeps working.
+  const [visibleCountryCodes, setVisibleCountryCodes] = useState<Set<string> | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [submitStatus, setSubmitStatus] = useState<{ success?: boolean; message?: string } | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
@@ -281,6 +288,51 @@ export const ServicesPage: React.FC = () => {
       icon: Globe2,
     },
   };
+
+  // Load the admin-controlled visible-country list once, for the inquiry
+  // form's destination dropdown. A failed load leaves the static list in
+  // place (the form must keep working); it never blocks an inquiry.
+  useEffect(() => {
+    let cancelled = false;
+    listVisibleCountries()
+      .then((list) => {
+        if (cancelled) return;
+        setVisibleCountryCodes(
+          new Set(list.map((c) => (c.code || '').toUpperCase()).filter(Boolean))
+        );
+      })
+      .catch(() => {
+        // Keep the full static destination list if the directory is unreachable.
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  // Restrict a static continent list to countries visible on the website.
+  // "Other Country" is the catch-all and always stays available.
+  const filterVisibleCountries = (countries: { name: string; code: string }[]) => {
+    if (!visibleCountryCodes || visibleCountryCodes.size === 0) return countries;
+    const filtered = countries.filter(
+      (ctry) => ctry.code === 'OTHER' || visibleCountryCodes.has(ctry.code.toUpperCase())
+    );
+    return filtered.length > 0 ? filtered : countries;
+  };
+
+  const continentCountries =
+    CONTINENTS_AND_COUNTRIES.find((c) => c.name === selectedContinent)?.countries ?? [];
+  const visibleDestinationOptions = filterVisibleCountries(continentCountries);
+
+  // If the visible list loads and the current destination is no longer
+  // offered, move to the first offered destination for this continent.
+  useEffect(() => {
+    if (!visibleCountryCodes) return;
+    const offered = visibleDestinationOptions.map((c) => c.name);
+    if (offered.length > 0 && !offered.includes(formData.destinationCountry)) {
+      setFormData((prev) => ({ ...prev, destinationCountry: offered[0] }));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [visibleCountryCodes, selectedContinent]);
 
   // Keep the tab in sync with the /services/:id route.
   useEffect(() => {
@@ -655,8 +707,9 @@ export const ServicesPage: React.FC = () => {
                         const contName = e.target.value;
                         setSelectedContinent(contName);
                         const cont = CONTINENTS_AND_COUNTRIES.find((c) => c.name === contName);
-                        if (cont && cont.countries.length > 0) {
-                          setFormData({ ...formData, destinationCountry: cont.countries[0].name });
+                        const options = cont ? filterVisibleCountries(cont.countries) : [];
+                        if (options.length > 0) {
+                          setFormData({ ...formData, destinationCountry: options[0].name });
                         }
                       }}
                       className="field-input"
@@ -680,12 +733,17 @@ export const ServicesPage: React.FC = () => {
                       onChange={(e) => setFormData({ ...formData, destinationCountry: e.target.value })}
                       className="field-input"
                     >
-                      {CONTINENTS_AND_COUNTRIES.find((c) => c.name === selectedContinent)?.countries.map((ctry) => (
+                      {visibleDestinationOptions.map((ctry) => (
                         <option key={ctry.name} value={ctry.name}>
                           {ctry.name}
                         </option>
                       ))}
                     </select>
+                    {visibleCountryCodes && (
+                      <p className="field-hint">
+                        Showing destinations currently listed on our website.
+                      </p>
+                    )}
                   </div>
                 </div>
 

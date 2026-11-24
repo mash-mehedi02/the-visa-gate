@@ -1,5 +1,16 @@
+successfully downloaded text file (SHA: c6e4dc52a2f4abcf44002d0848a5d0b690707330)
 import React, { useEffect, useState, useCallback, useRef } from 'react';
-import { api } from '../../services/api';
+import {
+  getMyProfile,
+  getMyApplications,
+  getApplicationProgress,
+  listMyDocuments,
+  downloadMyDocument,
+  uploadMyProfilePic,
+  validateProfilePic,
+  type MyDocument,
+} from '../../services/client-portal';
+import { ProfilePic } from '../../components/common/ProfilePic';
 import { useAuth } from '../../context/AuthContext';
 import {
   Calendar,
@@ -18,7 +29,9 @@ import {
   MapPin,
   FileQuestion,
   Camera,
-  Upload
+  Upload,
+  Download,
+  Eye as EyeIcon
 } from 'lucide-react';
 import { StepStatus, DocumentStatus } from '@thevisagate/shared';
 import { OFFICE } from '../../components/common/ContactStrip';
@@ -26,7 +39,7 @@ import { EstimateNotice } from '../../components/common/EstimateNotice';
 import { NotificationBell } from '../../components/common/NotificationBell';
 
 export const ClientPortalPage: React.FC = () => {
-  const { user } = useAuth();
+  const { user, refreshUser } = useAuth();
   const [profile, setProfile] = useState<any>(null);
   const [applications, setApplications] = useState<any[]>([]);
   const [selectedAppId, setSelectedAppId] = useState<string | null>(null);
@@ -37,37 +50,100 @@ export const ClientPortalPage: React.FC = () => {
   const [revealSensitive, setRevealSensitive] = useState(false);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [avatarSuccess, setAvatarSuccess] = useState<string | null>(null);
+  const [docActionId, setDocActionId] = useState<string | null>(null);
+  const [docActionKind, setDocActionKind] = useState<'view' | 'download' | null>(null);
+  const [docActionError, setDocActionError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleAvatarSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (!file.type.startsWith('image/')) {
-      setError('Please select a valid image file (JPG, PNG, or WebP).');
-      return;
-    }
-    if (file.size > 5 * 1024 * 1024) {
-      setError('Image must be under 5MB.');
+    // Image only (JPEG/PNG/WebP), max 5MB — validated again in the service.
+    const validationError = validateProfilePic(file);
+    if (validationError) {
+      setError(validationError);
+      if (fileInputRef.current) fileInputRef.current.value = '';
       return;
     }
 
     try {
       setUploadingAvatar(true);
       setError(null);
-      const fd = new FormData();
-      fd.append('avatar', file);
-      const res: any = await api.post('/client/avatar', fd);
-      if (res.data?.avatarUrl) {
-        setProfile((prev: any) => ({ ...prev, avatarUrl: res.data.avatarUrl }));
-        setAvatarSuccess('Profile photo updated successfully!');
-        setTimeout(() => setAvatarSuccess(null), 4000);
-      }
+      // Uploads to Cloudinary and saves the returned URL on the client's
+      // own profile. Only the signed-in client's photo is ever changed.
+      const { avatarUrl } = await uploadMyProfilePic(file);
+      setProfile((prev: any) => ({ ...prev, avatarUrl }));
+      // Refresh the signed-in user so the portal header photo updates too.
+      await refreshUser().catch(() => {});
+      setAvatarSuccess('Profile photo updated successfully!');
+      setTimeout(() => setAvatarSuccess(null), 4000);
     } catch (err: any) {
-      setError(err?.message || 'Failed to upload profile photo. Please try again.');
+      setError(
+        err?.message ||
+          'We could not upload your profile photo. Please try again, or contact the office if the problem continues.'
+      );
     } finally {
       setUploadingAvatar(false);
       if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
+
+  const fileNameForDocument = (doc: MyDocument, blob?: Blob): string => {
+    const base = (doc.documentName || 'document').replace(/[^A-Za-z0-9 _-]+/g, '').trim().replace(/\s+/g, '-') || 'document';
+    const extByType: Record<string, string> = {
+      'application/pdf': '.pdf',
+      'image/jpeg': '.jpg',
+      'image/png': '.png',
+      'image/webp': '.webp',
+    };
+    return `${base}${blob && extByType[blob.type] ? extByType[blob.type] : ''}`;
+  };
+
+  // View or download one of the client's OWN documents. The list endpoint
+  // only ever returns this client's documents, and the download endpoint
+  // is authenticated, so no other client's file can be opened from here.
+  const openDocumentFile = async (doc: MyDocument, kind: 'view' | 'download') => {
+    setDocActionError(null);
+    setDocActionId(doc.id);
+    setDocActionKind(kind);
+    try {
+      // Prefer a server-issued per-document URL when the API returns one.
+      const directUrl = doc.viewUrl || doc.downloadUrl || doc.signedUrl;
+      if (directUrl) {
+        if (kind === 'view') {
+          window.open(directUrl, '_blank', 'noopener,noreferrer');
+        } else {
+          const a = document.createElement('a');
+          a.href = directUrl;
+          a.download = fileNameForDocument(doc);
+          a.rel = 'noopener';
+          document.body.appendChild(a);
+          a.click();
+          a.remove();
+        }
+        return;
+      }
+      const blob = await downloadMyDocument(doc.id);
+      const url = URL.createObjectURL(blob);
+      if (kind === 'view') {
+        window.open(url, '_blank', 'noopener,noreferrer');
+      } else {
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = fileNameForDocument(doc, blob);
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+      }
+      window.setTimeout(() => URL.revokeObjectURL(url), 60_000);
+    } catch {
+      setDocActionError(
+        'We could not open that document. Please try again, or contact the office — your case officer can share a copy.'
+      );
+    } finally {
+      setDocActionId(null);
+      setDocActionKind(null);
     }
   };
 
@@ -76,23 +152,22 @@ export const ClientPortalPage: React.FC = () => {
       setLoading(true);
       setError(null);
 
-      const profileRes: any = await api.get('/client/profile');
-      if (profileRes.data) setProfile(profileRes.data);
+      const profile = await getMyProfile();
+      setProfile(profile);
 
-      const appsRes: any = await api.get('/client/applications');
-      const apps = appsRes.data || [];
+      const apps = await getMyApplications();
       setApplications(apps);
 
       if (apps.length > 0) {
         const firstApp = apps[0];
         setSelectedAppId(firstApp.id);
 
-        const [progRes, docsRes]: [any, any] = await Promise.all([
-          api.get(`/client/applications/${firstApp.id}/progress`),
-          api.get(`/client/documents?applicationId=${firstApp.id}`),
+        const [progress, docs] = await Promise.all([
+          getApplicationProgress(firstApp.id),
+          listMyDocuments(firstApp.id),
         ]);
-        if (progRes.data) setProgressDetails(progRes.data);
-        if (docsRes.data) setDocuments(docsRes.data);
+        setProgressDetails(progress);
+        setDocuments(docs);
       } else {
         setProgressDetails(null);
         setDocuments([]);
@@ -116,12 +191,12 @@ export const ClientPortalPage: React.FC = () => {
     setLoading(true);
     setError(null);
     try {
-      const [progRes, docsRes]: [any, any] = await Promise.all([
-        api.get(`/client/applications/${appId}/progress`),
-        api.get(`/client/documents?applicationId=${appId}`),
+      const [progress, docs] = await Promise.all([
+        getApplicationProgress(appId),
+        listMyDocuments(appId),
       ]);
-      if (progRes.data) setProgressDetails(progRes.data);
-      if (docsRes.data) setDocuments(docsRes.data);
+      setProgressDetails(progress);
+      setDocuments(docs);
     } catch (err: any) {
       setError(
         err?.message || 'We could not load that case. Please try again.'
@@ -341,17 +416,7 @@ export const ClientPortalPage: React.FC = () => {
         <div className="flex flex-col sm:flex-row items-center sm:items-start gap-5 sm:gap-6">
           {/* Avatar with Upload Option */}
           <div className="relative shrink-0 group">
-            {profile?.avatarUrl ? (
-              <img
-                src={profile.avatarUrl}
-                alt={profile.fullName}
-                className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl object-cover border-2 border-brand-gold/40 shadow-sm"
-              />
-            ) : (
-              <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl bg-brand-navy text-brand-gold font-bold text-3xl font-serif flex items-center justify-center shadow-sm">
-                {profile?.fullName?.[0] || 'C'}
-              </div>
-            )}
+            <ProfilePic src={profile?.avatarUrl} name={profile?.fullName} size="md" shape="square" />
 
             <input
               type="file"
@@ -690,16 +755,23 @@ export const ClientPortalPage: React.FC = () => {
               Submitted Documents &amp; Verification Status
             </h2>
             <p className="text-xs text-slate-500 mt-0.5">
-              The status of the papers you have submitted. We list only the document name and its verification state —
-              your files are not stored in your browser.
+              Only the documents on your own file are listed here. Select View to open a copy, or Download to save
+              it — your files are not stored in your browser.
             </p>
           </div>
+
+          {docActionError && (
+            <div role="alert" className="p-3.5 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs flex items-start gap-2.5">
+              <AlertCircle className="w-4 h-4 shrink-0 text-red-500 mt-0.5" />
+              <span>{docActionError}</span>
+            </div>
+          )}
 
           {documents.length > 0 ? (
             <>
               {/* Desktop table */}
               <div className="table-scroll hidden sm:block">
-                <table className="w-full text-left text-xs min-w-[520px]">
+                <table className="w-full text-left text-xs min-w-[620px]">
                   <caption className="sr-only">
                     Documents you have submitted and their current verification status
                   </caption>
@@ -711,8 +783,11 @@ export const ClientPortalPage: React.FC = () => {
                       <th scope="col" className="py-3 px-4">
                         Verification Status
                       </th>
-                      <th scope="col" className="py-3 px-4 text-right">
+                      <th scope="col" className="py-3 px-4">
                         Last Updated
+                      </th>
+                      <th scope="col" className="py-3 px-4 text-right">
+                        Actions
                       </th>
                     </tr>
                   </thead>
@@ -726,8 +801,34 @@ export const ClientPortalPage: React.FC = () => {
                           </span>
                         </td>
                         <td className="py-3 px-4">{getDocStatusBadge(doc.status)}</td>
-                        <td className="py-3 px-4 text-right text-slate-500 font-mono">
+                        <td className="py-3 px-4 text-slate-500 font-mono">
                           {doc.verifiedDate || doc.submittedDate || '—'}
+                        </td>
+                        <td className="py-3 px-4">
+                          <span className="flex items-center justify-end gap-2">
+                            <button
+                              type="button"
+                              onClick={() => openDocumentFile(doc, 'view')}
+                              disabled={docActionId === doc.id}
+                              aria-label={`View ${doc.documentName}`}
+                              className="inline-flex items-center justify-center gap-1 px-3 py-2 rounded-lg border border-slate-200 text-xs font-bold text-brand-navy hover:bg-slate-50 disabled:opacity-50 min-h-[44px]"
+                            >
+                              <EyeIcon className="w-3.5 h-3.5" />
+                              <span>{docActionId === doc.id && docActionKind === 'view' ? 'Opening…' : 'View'}</span>
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => openDocumentFile(doc, 'download')}
+                              disabled={docActionId === doc.id}
+                              aria-label={`Download ${doc.documentName}`}
+                              className="inline-flex items-center justify-center gap-1 px-3 py-2 rounded-lg bg-brand-navy text-white text-xs font-bold hover:bg-brand-navy-light disabled:opacity-50 min-h-[44px]"
+                            >
+                              <Download className="w-3.5 h-3.5" />
+                              <span>
+                                {docActionId === doc.id && docActionKind === 'download' ? 'Saving…' : 'Download'}
+                              </span>
+                            </button>
+                          </span>
                         </td>
                       </tr>
                     ))}
@@ -751,6 +852,30 @@ export const ClientPortalPage: React.FC = () => {
                       <span className="text-xs text-slate-500 font-mono">
                         {doc.verifiedDate || doc.submittedDate || '—'}
                       </span>
+                    </span>
+                    <span className="flex items-center gap-2 pt-1">
+                      <button
+                        type="button"
+                        onClick={() => openDocumentFile(doc, 'view')}
+                        disabled={docActionId === doc.id}
+                        aria-label={`View ${doc.documentName}`}
+                        className="flex-1 inline-flex items-center justify-center gap-1 px-3 py-2 rounded-lg border border-slate-300 bg-white text-xs font-bold text-brand-navy disabled:opacity-50 min-h-[44px]"
+                      >
+                        <EyeIcon className="w-3.5 h-3.5" />
+                        <span>{docActionId === doc.id && docActionKind === 'view' ? 'Opening…' : 'View'}</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => openDocumentFile(doc, 'download')}
+                        disabled={docActionId === doc.id}
+                        aria-label={`Download ${doc.documentName}`}
+                        className="flex-1 inline-flex items-center justify-center gap-1 px-3 py-2 rounded-lg bg-brand-navy text-white text-xs font-bold disabled:opacity-50 min-h-[44px]"
+                      >
+                        <Download className="w-3.5 h-3.5" />
+                        <span>
+                          {docActionId === doc.id && docActionKind === 'download' ? 'Saving…' : 'Download'}
+                        </span>
+                      </button>
                     </span>
                   </li>
                 ))}
