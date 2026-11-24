@@ -15,6 +15,7 @@ import {
   Info
 } from 'lucide-react';
 import { RoleName } from '@thevisagate/shared';
+import { Modal } from '../../components/common/Modal';
 
 export const AdminLoginPage: React.FC = () => {
   const [identifier, setIdentifier] = useState<string>('');
@@ -36,12 +37,16 @@ export const AdminLoginPage: React.FC = () => {
   const [currentPass, setCurrentPass] = useState<string>('');
   const [firstNewPass, setFirstNewPass] = useState<string>('');
 
-  const { login, verifyMfa, isAuthenticated, user } = useAuth();
+  const { login, verifyMfa, logout, isAuthenticated, user } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
     if (isAuthenticated && user && !user.mustChangePassword) {
-      if (user.role === RoleName.ADMIN || user.role === RoleName.STAFF) {
+      if (
+        user.role === RoleName.ADMIN ||
+        user.role === RoleName.SUPER_ADMIN ||
+        user.role === RoleName.STAFF
+      ) {
         navigate('/admin/dashboard');
       } else {
         // Clients should not be here — redirect away
@@ -79,6 +84,7 @@ export const AdminLoginPage: React.FC = () => {
           setShowChangePassword(true);
         } else if (
           response.user.role === RoleName.ADMIN ||
+          response.user.role === RoleName.SUPER_ADMIN ||
           response.user.role === RoleName.STAFF
         ) {
           navigate('/admin/dashboard');
@@ -109,7 +115,11 @@ export const AdminLoginPage: React.FC = () => {
       const loggedUser = await verifyMfa(mfaToken, mfaCode.trim());
       if (loggedUser.mustChangePassword) {
         setShowChangePassword(true);
-      } else if (loggedUser.role === RoleName.ADMIN || loggedUser.role === RoleName.STAFF) {
+      } else if (
+        loggedUser.role === RoleName.ADMIN ||
+        loggedUser.role === RoleName.SUPER_ADMIN ||
+        loggedUser.role === RoleName.STAFF
+      ) {
         navigate('/admin/dashboard');
       } else {
         setError('Access denied. This portal is restricted to authorised staff only.');
@@ -121,12 +131,19 @@ export const AdminLoginPage: React.FC = () => {
     }
   };
 
+  // Server password rule: 8+ characters, one uppercase letter, one number
+  // and one symbol.
+  const isStrongPassword = (value: string): boolean =>
+    value.length >= 8 && /[A-Z]/.test(value) && /[0-9]/.test(value) && /[^A-Za-z0-9]/.test(value);
+
   const handleFirstPasswordChange = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
 
-    if (firstNewPass.length < 8) {
-      setFieldErrors({ firstNewPass: 'Your new password must be at least 8 characters long.' });
+    if (!isStrongPassword(firstNewPass)) {
+      setFieldErrors({
+        firstNewPass: 'Use at least 8 characters, including one uppercase letter, one number and one symbol.',
+      });
       return;
     }
     setFieldErrors({});
@@ -226,6 +243,10 @@ export const AdminLoginPage: React.FC = () => {
                       {fieldErrors.mfaCode}
                     </p>
                   )}
+                  <p className="field-hint text-center">
+                    The code expires 10 minutes after it is sent. Didn&apos;t get one? Cancel and sign in
+                    again to request a new code.
+                  </p>
                 </div>
 
                 <button
@@ -330,7 +351,7 @@ export const AdminLoginPage: React.FC = () => {
                   <ArrowRight className="w-4 h-4 text-brand-gold" />
                 </button>
 
-                <div className="flex items-start gap-2.5 p-3 rounded-lg bg-slate-50 border border-slate-200 text-[11px] text-slate-600 leading-relaxed">
+                <div className="flex items-start gap-2.5 p-3 rounded-lg bg-slate-50 border border-slate-200 text-xs text-slate-600 leading-relaxed">
                   <Info className="w-3.5 h-3.5 text-brand-gold-dark shrink-0 mt-0.5" />
                   <span>
                     Staff access requires two-factor authentication. If you have lost your device, contact the system
@@ -354,6 +375,67 @@ export const AdminLoginPage: React.FC = () => {
           </Link>
         </div>
       </div>
+
+      {/* Forced password change (first sign-in / temporary password). Closing
+          the dialog signs the user out: nobody continues on a temporary password. */}
+      <Modal
+        isOpen={showChangePassword}
+        onClose={() => {
+          setShowChangePassword(false);
+          logout();
+        }}
+        title="Set a new password"
+        description="For your security, a temporary password must be changed at first sign-in. Closing this dialog signs you out."
+        dismissible={false}
+      >
+        <form onSubmit={handleFirstPasswordChange} noValidate className="space-y-4">
+          <div>
+            <label htmlFor="admin-first-current-pass" className="field-label">
+              Current (temporary) password *
+            </label>
+            <input
+              id="admin-first-current-pass"
+              type="password"
+              required
+              value={currentPass}
+              onChange={(e) => setCurrentPass(e.target.value)}
+              autoComplete="current-password"
+              className="field-input"
+            />
+          </div>
+          <div>
+            <label htmlFor="admin-first-new-pass" className="field-label">
+              New password *
+            </label>
+            <input
+              id="admin-first-new-pass"
+              type="password"
+              required
+              value={firstNewPass}
+              onChange={(e) => setFirstNewPass(e.target.value)}
+              autoComplete="new-password"
+              aria-invalid={!!fieldErrors.firstNewPass}
+              aria-describedby={`admin-first-new-pass-hint${fieldErrors.firstNewPass ? ' admin-first-new-pass-error' : ''}`}
+              className={`field-input ${fieldErrors.firstNewPass ? 'border-red-400' : ''}`}
+            />
+            <p id="admin-first-new-pass-hint" className="field-hint">
+              At least 8 characters, including one uppercase letter, one number and one symbol.
+            </p>
+            {fieldErrors.firstNewPass && (
+              <p id="admin-first-new-pass-error" className="field-error" role="alert">
+                {fieldErrors.firstNewPass}
+              </p>
+            )}
+          </div>
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full py-3 px-4 rounded-lg bg-brand-navy text-white text-xs font-bold hover:bg-brand-navy-light transition-all min-h-[48px] disabled:opacity-50"
+          >
+            {loading ? 'Updating password…' : 'Save new password'}
+          </button>
+        </form>
+      </Modal>
     </div>
   );
 };

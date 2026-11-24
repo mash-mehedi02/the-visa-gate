@@ -14,7 +14,6 @@ import {
   ArrowRight,
   Info
 } from 'lucide-react';
-import { BOOKING_TIME_SLOTS } from '@thevisagate/shared';
 import { OFFICE } from '../../components/common/ContactStrip';
 
 export const ContactPage: React.FC = () => {
@@ -52,6 +51,8 @@ export const ContactPage: React.FC = () => {
   const [submitting, setSubmitting] = useState(false);
   const [confirmedBooking, setConfirmedBooking] = useState<any | null>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [countriesError, setCountriesError] = useState<string | null>(null);
+  const [slotError, setSlotError] = useState<string | null>(null);
 
   // Load countries when continent changes
   useEffect(() => {
@@ -59,6 +60,7 @@ export const ContactPage: React.FC = () => {
       try {
         const res: any = await api.get(`/countries?continent=${selectedContinent}`);
         if (res.data) {
+          setCountriesError(null);
           setCountries(res.data);
           if (res.data.length > 0) {
             setSelectedCountry(res.data[0]);
@@ -72,6 +74,9 @@ export const ContactPage: React.FC = () => {
         }
       } catch (err) {
         console.error(err);
+        setCountriesError(
+          'We could not load the destination list. Please check your connection and try again, or call the hotline.'
+        );
       }
     };
     fetchCountries();
@@ -84,9 +89,15 @@ export const ContactPage: React.FC = () => {
         setLoadingSlots(true);
         setSelectedTime('');
         const res: any = await api.get(`/bookings/slots?date=${selectedDate}`);
-        if (res.data) setSlotData(res.data);
+        if (res.data) {
+          setSlotError(null);
+          setSlotData(res.data);
+        }
       } catch (err) {
         console.error(err);
+        setSlotError(
+          'We could not load time slots for this date. Please try another date or call the hotline.'
+        );
       } finally {
         setLoadingSlots(false);
       }
@@ -114,9 +125,14 @@ export const ContactPage: React.FC = () => {
       errors.fullName = 'Please enter your full name as it appears on your passport.';
     }
 
-    const phoneDigits = phone.replace(/\D/g, '');
-    if (phoneDigits.length < 8) {
-      errors.phone = 'Enter a phone number we can reach you on (at least 8 digits).';
+    if (!selectedDate) {
+      errors.date = 'Please choose a preferred date.';
+    } else if (selectedDate < tomorrowStr) {
+      errors.date = 'Please choose a date from tomorrow onwards.';
+    }
+
+    if (!/^(\+?880|0)1[3-9]\d{8}$/.test(phone.replace(/[\s-]/g, ''))) {
+      errors.phone = 'Enter a Bangladeshi mobile number, e.g. 01XXXXXXXXX or +880 1XXXXXXXXX.';
     }
 
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email.trim())) {
@@ -144,6 +160,12 @@ export const ContactPage: React.FC = () => {
       return;
     }
 
+    // Never silently fall back to a default country: the user chose a destination.
+    if (!selectedCountry) {
+      setSubmitError('Please choose a destination country before submitting.');
+      return;
+    }
+
     setSubmitting(true);
     try {
       const payload = {
@@ -151,8 +173,8 @@ export const ContactPage: React.FC = () => {
         phone: phone.trim(),
         email: email.trim(),
         continent: selectedContinent,
-        countryId: selectedCountry?.id || 'country-mys',
-        countryName: selectedCountry?.name || 'Malaysia',
+        countryId: selectedCountry?.id || '',
+        countryName: selectedCountry?.name || '',
         programId: selectedProgram?.id || null,
         programName: selectedProgram ? selectedProgram.programName : 'General Consultation',
         preferredDate: selectedDate,
@@ -227,7 +249,7 @@ export const ContactPage: React.FC = () => {
                       <br />
                       {OFFICE.addressLine2}
                     </span>
-                    <span className="text-[11px] text-brand-gold-dark font-medium block mt-1">
+                    <span className="text-xs text-brand-gold-dark font-medium block mt-1">
                       Landmark: {OFFICE.landmark}
                     </span>
                   </div>
@@ -287,10 +309,10 @@ export const ContactPage: React.FC = () => {
               <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-600 space-y-1.5">
                 <div className="flex items-center gap-2 text-brand-navy font-bold">
                   <ShieldCheck className="w-4 h-4 text-brand-success" />
-                  <span>Instant slot confirmation</span>
+                  <span>Slot held pending confirmation</span>
                 </div>
-                <p className="text-[11px] text-slate-500 leading-relaxed">
-                  Your slot is reserved as soon as the form is submitted. A representative will confirm by phone or
+                <p className="text-xs text-slate-500 leading-relaxed">
+                  Your slot is held as soon as the form is submitted. A representative will confirm by phone or
                   WhatsApp before your visit.
                 </p>
               </div>
@@ -300,9 +322,10 @@ export const ContactPage: React.FC = () => {
                   <Info className="w-4 h-4 text-brand-gold-dark" />
                   <span>Before you book</span>
                 </div>
-                <p className="text-[11px] text-slate-500 leading-relaxed">
+                <p className="text-xs text-slate-500 leading-relaxed">
                   Bring your passport, NID copy, academic certificates and any employer offer letter. A consultation
-                  does not commit you to using our services.
+                  does not commit you to using our services. The first consultation is free; any service fees are
+                  confirmed in writing before you proceed.
                 </p>
               </div>
             </div>
@@ -332,28 +355,28 @@ export const ContactPage: React.FC = () => {
 
                 <div className="bg-slate-50 rounded-2xl p-5 sm:p-6 border border-slate-200 text-left text-xs max-w-md mx-auto space-y-3">
                   <div className="flex justify-between gap-4 border-b border-slate-200 pb-2">
-                    <span className="text-slate-400 uppercase shrink-0">Booking Reference</span>
+                    <span className="text-slate-500 uppercase shrink-0">Booking Reference</span>
                     <strong className="text-brand-navy text-sm font-bold break-all text-right">
                       {confirmedBooking.bookingCode}
                     </strong>
                   </div>
                   <div className="flex justify-between gap-4 border-b border-slate-200 pb-2">
-                    <span className="text-slate-400 uppercase shrink-0">Appointment Date</span>
+                    <span className="text-slate-500 uppercase shrink-0">Appointment Date</span>
                     <strong className="text-slate-800 text-right">{confirmedBooking.preferredDate}</strong>
                   </div>
                   <div className="flex justify-between gap-4 border-b border-slate-200 pb-2">
-                    <span className="text-slate-400 uppercase shrink-0">Appointment Time</span>
+                    <span className="text-slate-500 uppercase shrink-0">Appointment Time</span>
                     <strong className="text-brand-gold-dark text-right">{confirmedBooking.preferredTime}</strong>
                   </div>
                   <div className="flex justify-between gap-4 border-b border-slate-200 pb-2">
-                    <span className="text-slate-400 uppercase shrink-0">Destination Pathway</span>
+                    <span className="text-slate-500 uppercase shrink-0">Destination Pathway</span>
                     <span className="text-slate-800 text-right break-words">
                       {confirmedBooking.countryName}
                       {confirmedBooking.programName ? ` (${confirmedBooking.programName})` : ''}
                     </span>
                   </div>
                   <div className="flex justify-between gap-4">
-                    <span className="text-slate-400 uppercase shrink-0">Applicant</span>
+                    <span className="text-slate-500 uppercase shrink-0">Applicant</span>
                     <span className="text-slate-800 text-right break-words">{confirmedBooking.fullName}</span>
                   </div>
                 </div>
@@ -433,6 +456,12 @@ export const ContactPage: React.FC = () => {
                     </div>
                   </div>
 
+                  {countriesError && (
+                    <p className="field-error" role="alert">
+                      {countriesError}
+                    </p>
+                  )}
+
                   <div>
                     <label htmlFor="bk-program" className="field-label">
                       Visa program / immigration category *
@@ -480,9 +509,19 @@ export const ContactPage: React.FC = () => {
                       required
                       min={tomorrowStr}
                       value={selectedDate}
-                      onChange={(e) => setSelectedDate(e.target.value)}
-                      className="field-input"
+                      onChange={(e) => {
+                        setSelectedDate(e.target.value);
+                        setFieldErrors((prev) => ({ ...prev, date: '' }));
+                      }}
+                      aria-invalid={!!fieldErrors.date}
+                      aria-describedby={fieldErrors.date ? 'bk-date-error' : undefined}
+                      className={`field-input ${fieldErrors.date ? 'border-red-400' : ''}`}
                     />
+                    {fieldErrors.date && (
+                      <p id="bk-date-error" className="field-error" role="alert">
+                        {fieldErrors.date}
+                      </p>
+                    )}
                   </div>
 
                   <div>
@@ -491,7 +530,7 @@ export const ContactPage: React.FC = () => {
                     </span>
 
                     {loadingSlots ? (
-                      <div role="status" className="py-6 text-center text-xs text-slate-400">
+                      <div role="status" className="py-6 text-center text-xs text-slate-500">
                         Checking slot availability…
                       </div>
                     ) : slotData?.isHoliday ? (
@@ -524,7 +563,7 @@ export const ContactPage: React.FC = () => {
                             }`}
                           >
                             <span className="block">{slot.time}</span>
-                            <span className="text-[10px] block font-sans font-normal text-slate-400 mt-0.5">
+                            <span className="text-xs block font-sans font-normal text-slate-500 mt-0.5">
                               {slot.isAvailable ? `${slot.capacity - slot.bookedCount} left` : 'Fully booked'}
                             </span>
                           </button>
@@ -532,6 +571,11 @@ export const ContactPage: React.FC = () => {
                       </div>
                     )}
 
+                    {slotError && (
+                      <p className="field-error" role="alert">
+                        {slotError}
+                      </p>
+                    )}
                     {fieldErrors.time && (
                       <p className="field-error" role="alert">
                         {fieldErrors.time}
@@ -659,7 +703,7 @@ export const ContactPage: React.FC = () => {
                         aria-describedby={fieldErrors.privacyConsent ? 'bk-consent-error' : undefined}
                         className="rounded border-slate-300 text-brand-gold focus:ring-brand-gold mt-0.5 w-4 h-4 shrink-0"
                       />
-                      <span className="text-[11px] text-slate-600 leading-relaxed">
+                      <span className="text-xs text-slate-600 leading-relaxed">
                         I agree that The Visa Gate may contact me by phone, SMS or WhatsApp about this appointment
                         request, in line with the{' '}
                         <a href="/privacy" className="text-brand-navy font-semibold underline underline-offset-2">
@@ -686,7 +730,7 @@ export const ContactPage: React.FC = () => {
                     <span>{submitting ? 'Confirming…' : 'Submit & Request Appointment'}</span>
                     <ArrowRight className="w-4 h-4 text-brand-gold" />
                   </button>
-                  <p className="text-[11px] text-slate-500 text-center mt-2.5 leading-relaxed">
+                  <p className="text-xs text-slate-500 text-center mt-2.5 leading-relaxed">
                     Submitting this form does not create a visa application or commit you to any service.
                   </p>
                 </div>

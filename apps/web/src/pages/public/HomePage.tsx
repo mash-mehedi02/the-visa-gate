@@ -132,7 +132,7 @@ export const HomePage: React.FC = () => {
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 md:grid-cols-12 gap-8 md:gap-10 lg:gap-12 items-center">
             <div className="md:col-span-6 lg:col-span-7 space-y-6 text-center md:text-left">
-              <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-brand-gold/10 border border-brand-gold/30 text-brand-gold text-[11px] sm:text-xs font-semibold uppercase tracking-wider">
+              <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-brand-gold/10 border border-brand-gold/30 text-brand-gold text-xs sm:text-xs font-semibold uppercase tracking-wider">
                 <ShieldCheck className="w-3.5 h-3.5 text-brand-gold shrink-0" />
                 <span>Visa Consultancy &amp; Application Assistance</span>
               </div>
@@ -147,7 +147,7 @@ export const HomePage: React.FC = () => {
                 is happening at every stage.
               </p>
 
-              <div className="pt-2 flex flex-row md:flex-col lg:flex-row items-center justify-center md:justify-start gap-2.5 sm:gap-4">
+              <div className="pt-2 flex flex-col sm:flex-row md:flex-col lg:flex-row items-center justify-center md:justify-start gap-2.5 sm:gap-4">
                 <Link
                   to="/contact"
                   className="flex-1 md:flex-none inline-flex items-center justify-center gap-2 px-3 sm:px-7 py-3 sm:py-3.5 rounded-lg bg-brand-gold text-brand-navy font-bold text-xs sm:text-base hover:bg-brand-gold-light transition-all shadow-lg shadow-brand-gold/20 min-h-[48px] whitespace-nowrap"
@@ -176,19 +176,19 @@ export const HomePage: React.FC = () => {
               <div className="pt-6 border-t border-white/10 grid grid-cols-3 gap-3 sm:gap-6 text-center md:text-left">
                 <div>
                   <p className="text-base md:text-lg lg:text-3xl font-extrabold text-brand-gold font-serif">Step-by-step</p>
-                  <p className="text-[10px] md:text-[11px] lg:text-xs text-slate-400 font-medium uppercase mt-1 leading-tight">
+                  <p className="text-xs md:text-xs lg:text-xs text-slate-400 font-medium uppercase mt-1 leading-tight">
                     Published client procedures
                   </p>
                 </div>
                 <div>
                   <p className="text-base md:text-lg lg:text-3xl font-extrabold text-brand-gold font-serif">Own file only</p>
-                  <p className="text-[10px] md:text-[11px] lg:text-xs text-slate-400 font-medium uppercase mt-1 leading-tight">
+                  <p className="text-xs md:text-xs lg:text-xs text-slate-400 font-medium uppercase mt-1 leading-tight">
                     Portal shows your records
                   </p>
                 </div>
                 <div>
                   <p className="text-base md:text-lg lg:text-3xl font-extrabold text-brand-gold font-serif">Encrypted</p>
-                  <p className="text-[10px] md:text-[11px] lg:text-xs text-slate-400 font-medium uppercase mt-1 leading-tight">
+                  <p className="text-xs md:text-xs lg:text-xs text-slate-400 font-medium uppercase mt-1 leading-tight">
                     Passport &amp; NID stored safely
                   </p>
                 </div>
@@ -208,7 +208,7 @@ export const HomePage: React.FC = () => {
                       <p className="text-xs text-slate-500 mt-1">With a visa counsellor</p>
                     </div>
                   </div>
-                  <span className="text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 bg-brand-gold/15 text-brand-navy rounded-full shrink-0">
+                  <span className="text-xs font-bold uppercase tracking-wider px-2.5 py-1 bg-brand-gold/15 text-brand-navy rounded-full shrink-0">
                     Free
                   </span>
                 </div>
@@ -252,7 +252,7 @@ export const HomePage: React.FC = () => {
                         Hotline: <strong className="text-brand-navy">{OFFICE.hotline}</strong>
                       </span>
                     </a>
-                    <p className="text-[11px] text-slate-500 flex items-center justify-center gap-1.5">
+                    <p className="text-xs text-slate-500 flex items-center justify-center gap-1.5">
                       <Clock className="w-3 h-3 text-slate-400" />
                       <span>Saturday – Thursday, 11:00 AM – 6:00 PM</span>
                     </p>
@@ -292,7 +292,7 @@ export const HomePage: React.FC = () => {
                     <div className="w-12 h-12 rounded-lg bg-brand-bg group-hover:bg-brand-gold/15 flex items-center justify-center text-brand-navy group-hover:text-brand-gold-dark transition-colors shrink-0">
                       <Icon className="w-6 h-6 stroke-[1.8]" />
                     </div>
-                    <span className="text-[11px] font-bold text-slate-500 bg-slate-100 px-2.5 py-1 rounded-full uppercase tracking-wider">
+                    <span className="text-xs font-bold text-slate-500 bg-slate-100 px-2.5 py-1 rounded-full uppercase tracking-wider">
                       {svc.badge}
                     </span>
                   </div>
@@ -383,7 +383,7 @@ export const HomePage: React.FC = () => {
               Prepare Before You Visit
             </span>
             <h2 className="text-2xl sm:text-3xl font-extrabold text-brand-navy font-serif">
-              Bring these and we can start the same day
+              Bring these and we can usually start the same day
             </h2>
             <p className="text-sm sm:text-base text-slate-600 leading-relaxed">
               Requirements differ by destination and visa type, but most cases need the following. Bring originals —
@@ -497,7 +497,7 @@ export const HomePage: React.FC = () => {
                     <Phone className="w-4 h-4" />
                   </span>
                   <span>
-                    <span className="block text-[10px] font-bold uppercase tracking-wider text-slate-400">Call the hotline</span>
+                    <span className="block text-xs font-bold uppercase tracking-wider text-slate-500">Call the hotline</span>
                     <span className="block text-sm font-bold text-brand-navy">{OFFICE.hotline}</span>
                   </span>
                 </a>
@@ -510,7 +510,7 @@ export const HomePage: React.FC = () => {
                     <Mail className="w-4 h-4" />
                   </span>
                   <span className="min-w-0">
-                    <span className="block text-[10px] font-bold uppercase tracking-wider text-slate-400">Email us</span>
+                    <span className="block text-xs font-bold uppercase tracking-wider text-slate-500">Email us</span>
                     <span className="block text-sm font-bold text-brand-navy">{OFFICE.email}</span>
                   </span>
                 </a>
@@ -520,7 +520,7 @@ export const HomePage: React.FC = () => {
                     <MapPin className="w-4 h-4" />
                   </span>
                   <span>
-                    <span className="block text-[10px] font-bold uppercase tracking-wider text-slate-400">Office</span>
+                    <span className="block text-xs font-bold uppercase tracking-wider text-slate-500">Office</span>
                     <span className="block text-sm font-bold text-brand-navy leading-snug">
                       {OFFICE.addressLine1}
                     </span>
