@@ -35,7 +35,7 @@ import { RoleName, DocumentStatus } from '@thevisagate/shared';
 
 export const ClientsPage: React.FC = () => {
   const { user } = useAuth();
-  const isAdmin = user?.role === RoleName.ADMIN;
+  const isAdmin = user?.role === RoleName.ADMIN || user?.role === RoleName.SUPER_ADMIN;
 
   const [clients, setClients] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -517,7 +517,7 @@ export const ClientsPage: React.FC = () => {
         <div className="table-scroll">
           <table className="w-full text-left border-collapse text-xs min-w-[860px]">
             <thead>
-              <tr className="bg-brand-navy text-white text-[11px] uppercase tracking-wider font-semibold">
+              <tr className="bg-brand-navy text-white text-xs uppercase tracking-wider font-semibold">
                 <th className="py-3 px-6">Client Info</th>
                 <th className="py-3 px-6">Encrypted Credentials</th>
                 <th className="py-3 px-6">Referral Attribution</th>
@@ -554,15 +554,15 @@ export const ClientsPage: React.FC = () => {
                           <strong className="text-brand-navy text-sm font-serif block leading-snug">
                             {c.fullName}
                           </strong>
-                          <span className="text-[10px] text-brand-gold-dark font-mono font-bold block">
+                          <span className="text-xs text-brand-gold-dark font-mono font-bold block">
                             {c.clientCode}
                           </span>
-                          <span className="text-[11px] text-slate-500">{c.phone}</span>
+                          <span className="text-xs text-slate-500">{c.phone}</span>
                         </div>
                       </div>
                     </td>
 
-                    <td className="py-3.5 px-6 font-mono text-[11px] space-y-0.5">
+                    <td className="py-3.5 px-6 font-mono text-xs space-y-0.5">
                       <div>
                         <span className="text-slate-400 uppercase text-[9px] block">Passport (Username)</span>
                         <strong className="text-brand-navy">{c.passportMasked}</strong>
@@ -582,7 +582,7 @@ export const ClientsPage: React.FC = () => {
                       ) : (
                         <span className="text-slate-400 italic">Direct Lead</span>
                       )}
-                      <span className="text-[10px] text-slate-400 block mt-0.5">
+                      <span className="text-xs text-slate-400 block mt-0.5">
                         Source: {c.clientSource} ({c.referralDate || 'N/A'})
                       </span>
                     </td>
@@ -606,15 +606,15 @@ export const ClientsPage: React.FC = () => {
 
                     <td className="py-3.5 px-6">
                       {c.isArchived ? (
-                        <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold bg-slate-200 text-slate-700">
+                        <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-slate-200 text-slate-700">
                           Archived
                         </span>
                       ) : c.isActive ? (
-                        <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200">
+                        <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200">
                           Active
                         </span>
                       ) : (
-                        <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold bg-red-50 text-red-800 border border-red-200">
+                        <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-red-50 text-red-800 border border-red-200">
                           Deactivated
                         </span>
                       )}
@@ -999,18 +999,18 @@ export const ClientsPage: React.FC = () => {
               {/* Permanent Legal Identifiers (Fixed & Immutable) */}
               <div className="p-3.5 bg-slate-50 border border-slate-200 rounded-xl space-y-2">
                 <div className="flex items-center justify-between">
-                  <span className="text-[11px] font-bold text-slate-700 flex items-center gap-1.5 uppercase tracking-wider">
+                  <span className="text-xs font-bold text-slate-700 flex items-center gap-1.5 uppercase tracking-wider">
                     <Lock className="w-3.5 h-3.5 text-brand-gold-dark" />
                     Permanent Legal Identifiers (Fixed & Immutable)
                   </span>
-                  <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-slate-200 text-slate-600">
+                  <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-slate-200 text-slate-600">
                     Cannot be changed
                   </span>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
                   <div>
-                    <label className="block text-[11px] font-semibold text-slate-600 mb-1">Passport Number (Unique Username)</label>
+                    <label className="block text-xs font-semibold text-slate-600 mb-1">Passport Number (Unique Username)</label>
                     <div className="relative">
                       <input
                         type="text"
@@ -1023,7 +1023,7 @@ export const ClientsPage: React.FC = () => {
                   </div>
 
                   <div>
-                    <label className="block text-[11px] font-semibold text-slate-600 mb-1">National ID (NID) Number</label>
+                    <label className="block text-xs font-semibold text-slate-600 mb-1">National ID (NID) Number</label>
                     <div className="relative">
                       <input
                         type="text"
@@ -1035,7 +1035,7 @@ export const ClientsPage: React.FC = () => {
                     </div>
                   </div>
                 </div>
-                <p className="text-[10px] text-slate-500 italic">
+                <p className="text-xs text-slate-500 italic">
                   Passport and NID numbers are fixed legal credentials linked to client portal authentication and official immigration filings. They cannot be modified after registration.
                 </p>
               </div>
@@ -1270,11 +1270,11 @@ export const ClientsPage: React.FC = () => {
                         <strong className="text-xs font-bold text-brand-navy block">
                           {doc.documentTypeName}
                         </strong>
-                        <span className="text-[11px] text-slate-500 font-mono">
+                        <span className="text-xs text-slate-500 font-mono">
                           {doc.originalName} • {(doc.fileSize / 1024).toFixed(1)} KB
                         </span>
                         {doc.internalNotes && (
-                          <p className="text-[10px] text-slate-600 mt-0.5 italic">
+                          <p className="text-xs text-slate-600 mt-0.5 italic">
                             Note: {doc.internalNotes}
                           </p>
                         )}
@@ -1282,7 +1282,7 @@ export const ClientsPage: React.FC = () => {
                     </div>
 
                     <div className="flex items-center gap-2.5">
-                      <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                      <span className={`px-2 py-0.5 rounded text-xs font-bold ${
                         doc.status === 'VERIFIED' ? 'bg-emerald-100 text-emerald-800' : 'bg-blue-100 text-blue-800'
                       }`}>
                         {doc.status}
@@ -1425,11 +1425,11 @@ export const ClientsPage: React.FC = () => {
 
             <div className="bg-slate-50 rounded-xl p-4 border border-slate-200 text-left font-mono text-xs space-y-2">
               <div>
-                <span className="text-slate-400 text-[10px] uppercase block">Username / Passport</span>
+                <span className="text-slate-400 text-xs uppercase block">Username / Passport</span>
                 <strong className="text-brand-navy text-sm">{credentialsModal.identifier}</strong>
               </div>
               <div>
-                <span className="text-slate-400 text-[10px] uppercase block">Default Backup Pass</span>
+                <span className="text-slate-400 text-xs uppercase block">Default Backup Pass</span>
                 <strong className="text-brand-gold-dark text-sm">{credentialsModal.temporaryPassword}</strong>
               </div>
             </div>
@@ -1462,7 +1462,7 @@ export const ClientsPage: React.FC = () => {
                   </div>
                 )}
                 <div>
-                  <span className="text-[11px] font-bold text-brand-gold uppercase tracking-wider block">
+                  <span className="text-xs font-bold text-brand-gold uppercase tracking-wider block">
                     Client Profile
                   </span>
                   <h3 className="text-xl font-bold text-brand-navy">{selectedClient.client.fullName}</h3>
@@ -1509,19 +1509,19 @@ export const ClientsPage: React.FC = () => {
             <div className="space-y-4 text-xs">
               <div className="p-4 bg-slate-50 rounded-xl border border-slate-200/80 grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <span className="text-slate-400 text-[10px] uppercase block">Passport Number</span>
+                  <span className="text-slate-400 text-xs uppercase block">Passport Number</span>
                   <strong className="text-brand-navy font-mono text-sm">{selectedClient.client.passportMasked}</strong>
                 </div>
                 <div>
-                  <span className="text-slate-400 text-[10px] uppercase block">National ID (NID)</span>
+                  <span className="text-slate-400 text-xs uppercase block">National ID (NID)</span>
                   <strong className="text-slate-700 font-mono text-sm">{selectedClient.client.nidMasked}</strong>
                 </div>
                 <div>
-                  <span className="text-slate-400 text-[10px] uppercase block">Phone / WhatsApp</span>
+                  <span className="text-slate-400 text-xs uppercase block">Phone / WhatsApp</span>
                   <span className="text-slate-700">{selectedClient.client.phone}</span>
                 </div>
                 <div>
-                  <span className="text-slate-400 text-[10px] uppercase block">Date of Birth</span>
+                  <span className="text-slate-400 text-xs uppercase block">Date of Birth</span>
                   <span className="text-slate-700">{selectedClient.client.dateOfBirth}</span>
                 </div>
               </div>
@@ -1533,24 +1533,24 @@ export const ClientsPage: React.FC = () => {
                 </span>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
-                    <span className="text-slate-400 text-[10px] uppercase block">Referred By</span>
+                    <span className="text-slate-400 text-xs uppercase block">Referred By</span>
                     <strong className="text-brand-navy">{selectedClient.client.referredByStaffName || 'Direct'}</strong>
                   </div>
                   <div>
-                    <span className="text-slate-400 text-[10px] uppercase block">Processing Officer</span>
+                    <span className="text-slate-400 text-xs uppercase block">Processing Officer</span>
                     <strong className="text-brand-navy">{selectedClient.client.assignedProcessingStaffName || 'Unassigned'}</strong>
                   </div>
                   <div>
-                    <span className="text-slate-400 text-[10px] uppercase block">Client Source</span>
+                    <span className="text-slate-400 text-xs uppercase block">Client Source</span>
                     <span className="text-slate-700">{selectedClient.client.clientSource}</span>
                   </div>
                   <div>
-                    <span className="text-slate-400 text-[10px] uppercase block">Referral Date</span>
+                    <span className="text-slate-400 text-xs uppercase block">Referral Date</span>
                     <span className="text-slate-700">{selectedClient.client.referralDate || 'N/A'}</span>
                   </div>
                 </div>
                 {selectedClient.client.referralNotes && (
-                  <p className="text-[11px] text-slate-600 pt-1 border-t border-slate-200">
+                  <p className="text-xs text-slate-600 pt-1 border-t border-slate-200">
                     <strong>Note:</strong> {selectedClient.client.referralNotes}
                   </p>
                 )}
@@ -1570,14 +1570,14 @@ export const ClientsPage: React.FC = () => {
                     <div key={app.id} className="p-3.5 rounded-xl border border-slate-200 hover:border-brand-gold/60 transition-colors bg-white space-y-1.5">
                       <div className="flex items-center justify-between">
                         <strong className="text-brand-navy font-mono text-xs">{app.applicationCode}</strong>
-                        <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-brand-gold/20 text-brand-navy uppercase">
+                        <span className="text-xs font-bold px-2 py-0.5 rounded bg-brand-gold/20 text-brand-navy uppercase">
                           {app.status}
                         </span>
                       </div>
                       <p className="text-xs text-slate-600">
                         {app.countryName} • {app.visaCategoryName}
                       </p>
-                      <div className="flex items-center justify-between text-[11px] text-slate-400 pt-1 border-t border-slate-100">
+                      <div className="flex items-center justify-between text-xs text-slate-400 pt-1 border-t border-slate-100">
                         <span>Steps: {app.completedSteps} / {app.totalSteps} Completed</span>
                         <span>Docs: {app.verifiedDocuments} / {app.totalDocuments} Verified</span>
                       </div>
