@@ -296,14 +296,18 @@ async function main() {
       passwordHash: adminPasswordHash,
       roleId: adminRole.id,
       isActive: true,
-      mustChangePassword: false,
+      mustChangePassword: true,
     },
   });
 
   // 7. Seed Sample Staff Account
   console.log('Seeding Sample Staff User...');
   const staffEmail = 'staff@thevisagate.com';
-  const staffPasswordHash = await bcrypt.hash('StaffGate2026!', 12);
+  const seedStaffPassword = process.env.SEED_STAFF_PASSWORD;
+  if (!seedStaffPassword) {
+    throw new Error('SEED_STAFF_PASSWORD must be set to seed the sample staff account. See .env.example.');
+  }
+  const staffPasswordHash = await bcrypt.hash(seedStaffPassword, 12);
   const staffUser = await prisma.user.upsert({
     where: { identifier: staffEmail },
     update: {
@@ -316,7 +320,7 @@ async function main() {
       passwordHash: staffPasswordHash,
       roleId: staffRole.id,
       isActive: true,
-      mustChangePassword: false,
+      mustChangePassword: true,
       staffProfile: {
         create: {
           employeeId: 'EMP-001',
@@ -333,7 +337,11 @@ async function main() {
   console.log('Seeding Sample Client User...');
   const samplePassport = 'A12345678';
   const sampleNid = '19951234567890123';
-  const clientPasswordHash = await bcrypt.hash('ClientPass2026!', 12);
+  const seedClientPassword = process.env.SEED_CLIENT_PASSWORD;
+  if (!seedClientPassword) {
+    throw new Error('SEED_CLIENT_PASSWORD must be set to seed the sample client account. See .env.example.');
+  }
+  const clientPasswordHash = await bcrypt.hash(seedClientPassword, 12);
   const clientUser = await prisma.user.upsert({
     where: { identifier: samplePassport },
     update: {
@@ -346,7 +354,7 @@ async function main() {
       passwordHash: clientPasswordHash,
       roleId: clientRole.id,
       isActive: true,
-      mustChangePassword: false,
+      mustChangePassword: true,
       clientProfile: {
         create: {
           clientCode: 'CL-2026-0001',
@@ -366,9 +374,7 @@ async function main() {
   });
 
   console.log('--- Database Seeding Completed Successfully ---');
-  console.log(`Admin Login: ${config.bootstrap.adminEmail} / ${config.bootstrap.adminPassword}`);
-  console.log(`Staff Login: ${staffEmail} / StaffGate2026!`);
-  console.log(`Client Login: Passport: ${samplePassport} / ClientPass2026!`);
+  console.log('Seeded accounts use credentials from environment variables only. No passwords are printed.');
 }
 
 main()

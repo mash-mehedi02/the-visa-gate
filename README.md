@@ -75,13 +75,14 @@ npm run dev:web
 
 ---
 
-## Pre-seeded Demo Credentials
+## Seeded Accounts
 
-| Role | Username / Identifier | Password | Access Level |
-|---|---|---|---|
-| **System Admin** | `admin@thevisagate.com` | `AdminSecureGate2026!` | Full Control & Settings |
-| **Operations Staff** | `staff@thevisagate.com` | `StaffGate2026!` | Client & Workflow Management |
-| **Client** | `A12345678` (Passport #) | `ClientPass2026!` | Read-only Tracking Portal |
+No default passwords are shipped in this repository. The seed script creates the
+bootstrap admin, a sample staff account and a sample client account from
+environment variables only (`INITIAL_ADMIN_EMAIL` / `INITIAL_ADMIN_PASSWORD`,
+`SEED_STAFF_PASSWORD`, `SEED_CLIENT_PASSWORD`). Every seeded account must change
+its password at first sign-in. Rotate any credential that was ever published
+with a previous default before deploying — see `SECURITY_REVIEW.md`.
 
 ---
 

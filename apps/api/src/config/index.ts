@@ -1,6 +1,19 @@
 import dotenv from 'dotenv';
 import path from 'path';
 
+// Secrets must come from the environment. There are no built-in fallback
+// values: this repository is public, and any default shipped in source would
+// be the production secret for every deployment that forgot to set one.
+function requiredEnv(name: string): string {
+  const value = process.env[name];
+  if (!value) {
+    throw new Error(
+      `[config] Missing required environment variable ${name}. Copy .env.example to .env and set a strong random value. The server will not start with a built-in default secret.`
+    );
+  }
+  return value;
+}
+
 // Load .env from root or apps/api
 dotenv.config({ path: path.resolve(__dirname, '../../../.env') });
 dotenv.config();
@@ -16,19 +29,19 @@ export const config = {
   },
 
   jwt: {
-    secret: process.env.JWT_SECRET || 'the-visa-gate-dev-secret-super-safe-key-32chars',
+    secret: requiredEnv('JWT_SECRET'),
     expiresIn: process.env.JWT_EXPIRES_IN || '7d',
-    refreshSecret: process.env.JWT_REFRESH_SECRET || 'the-visa-gate-dev-refresh-secret-32chars',
+    refreshSecret: requiredEnv('JWT_REFRESH_SECRET'),
     refreshExpiresIn: process.env.JWT_REFRESH_EXPIRES_IN || '30d',
   },
 
   cookie: {
-    secret: process.env.COOKIE_SECRET || 'the-visa-gate-cookie-secret',
+    secret: requiredEnv('COOKIE_SECRET'),
     secure: process.env.NODE_ENV === 'production',
   },
 
   encryption: {
-    key: process.env.ENCRYPTION_KEY || '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef', // 32 bytes hex
+    key: requiredEnv('ENCRYPTION_KEY'), // 32 bytes hex (64 hex chars) for AES-256-GCM
   },
 
   storage: {
@@ -37,7 +50,9 @@ export const config = {
   },
 
   // Outbound email for one-time verification codes and password reset tokens.
-  // When SMTP_HOST is empty the codes fall back to the in-app notification inbox.
+  // SMTP is REQUIRED: staff MFA codes and password-reset tokens are delivered
+  // by email only. There is no in-app or retrievable-code fallback (see
+  // verification-delivery.service.ts and SECURITY_REVIEW.md).
   smtp: {
     host: process.env.SMTP_HOST || '',
     port: parseInt(process.env.SMTP_PORT || '587', 10),
@@ -50,12 +65,12 @@ export const config = {
   rateLimit: {
     windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS || '900000', 10), // 15 mins
     max: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS || '200', 10),
-    authMax: parseInt(process.env.AUTH_RATE_LIMIT_MAX || '100', 10),
+    authMax: parseInt(process.env.AUTH_RATE_LIMIT_MAX || '10', 10),
   },
 
   bootstrap: {
-    adminEmail: process.env.INITIAL_ADMIN_EMAIL || 'mehedihasan110577@gmail.com',
-    adminPassword: process.env.INITIAL_ADMIN_PASSWORD || 'Mehedi@TVG',
+    adminEmail: requiredEnv('INITIAL_ADMIN_EMAIL'),
+    adminPassword: requiredEnv('INITIAL_ADMIN_PASSWORD'),
     adminName: process.env.INITIAL_ADMIN_NAME || 'Mehedi Hasan',
   }
 };
