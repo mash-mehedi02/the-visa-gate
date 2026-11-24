@@ -1,64 +1,59 @@
 import React, { useState } from 'react';
 
-export type ProfilePicSize = 'sm' | 'md' | 'lg';
-
 interface ProfilePicProps {
-  /** Photo URL (for example a Cloudinary URL). Null/undefined shows initials. */
+  /** Secure hosted URL (e.g. a Cloudinary secure_url). Omit for the fallback. */
   src?: string | null;
-  /** Full name, used for the alt text and the initials fallback. */
-  name?: string | null;
-  size?: ProfilePicSize;
-  shape?: 'circle' | 'square';
+  /** Full name, used for the initials fallback and the image alt text. */
+  name: string;
+  size?: 'sm' | 'md' | 'lg';
   className?: string;
 }
 
-const sizeClasses: Record<ProfilePicSize, string> = {
-  sm: 'w-8 h-8 text-sm',
-  md: 'w-20 h-20 sm:w-24 sm:h-24 text-3xl',
-  lg: 'w-24 h-24 sm:w-28 sm:h-28 text-4xl',
-};
+const SIZE_CLASSES = {
+  sm: 'w-9 h-9 text-xs',
+  md: 'w-12 h-12 text-base',
+  lg: 'w-16 h-16 text-xl',
+} as const;
 
-function initialsFor(name?: string | null): string {
-  const first = (name || '').trim().charAt(0);
-  return first ? first.toUpperCase() : 'C';
+function initialsOf(name: string): string {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return 'C';
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
 }
 
 /**
- * Client profile photo with an initials fallback.
- * Shows the photo when a URL is available and loads; otherwise shows the
- * client's initial on the brand navy tile — never a broken image icon.
- * The image is decorative identification, so the alt text names the owner
- * without exposing any identifier.
+ * Shared avatar / profile-picture display. Shows the hosted picture when
+ * one exists and loads; otherwise falls back to the person's initials in
+ * the brand navy/gold style. Never renders a broken image.
  */
 export const ProfilePic: React.FC<ProfilePicProps> = ({
   src,
   name,
-  size = 'md',
-  shape = 'circle',
+  size = 'sm',
   className = '',
 }) => {
-  const [imgFailed, setImgFailed] = useState(false);
-  const shapeClass = shape === 'square' ? 'rounded-2xl' : 'rounded-full';
-  const classes = `${sizeClasses[size]} ${shapeClass} shrink-0 ${className}`.trim();
+  const [failed, setFailed] = useState(false);
+  const showImage = Boolean(src) && !failed;
 
-  if (src && !imgFailed) {
+  if (showImage) {
     return (
       <img
-        src={src}
-        alt={name ? `${name} — profile photo` : 'Profile photo'}
-        onError={() => setImgFailed(true)}
-        className={`${classes} object-cover border-2 border-brand-gold/40 shadow-sm bg-brand-navy`}
+        src={src as string}
+        alt={`${name} profile photo`}
+        onError={() => setFailed(true)}
+        className={`${SIZE_CLASSES[size]} rounded-full object-cover border border-brand-gold/40 shadow-xs shrink-0 ${className}`}
       />
     );
   }
 
   return (
-    <div
-      role="img"
-      aria-label={name ? `${name} — profile photo` : 'Profile photo'}
-      className={`${classes} bg-brand-navy text-brand-gold font-bold font-serif flex items-center justify-center shadow-sm border-2 border-brand-gold/40`}
+    <span
+      aria-hidden="true"
+      title={name}
+      className={`${SIZE_CLASSES[size]} rounded-full bg-brand-navy/10 text-brand-navy font-bold flex items-center justify-center shrink-0 ${className}`}
     >
-      {initialsFor(name)}
-    </div>
+      {initialsOf(name)}
+    </span>
   );
 };
