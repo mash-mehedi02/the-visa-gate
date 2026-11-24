@@ -7,7 +7,6 @@ const router = Router();
 
 router.post('/login', authLimiter, AuthController.login);
 router.post('/verify-mfa', authLimiter, AuthController.verifyMfa);
-router.post('/collect-verification-code', authLimiter, AuthController.collectVerificationCode);
 router.post('/forgot-password', authLimiter, AuthController.forgotPassword);
 router.post('/reset-password', authLimiter, AuthController.resetPassword);
 

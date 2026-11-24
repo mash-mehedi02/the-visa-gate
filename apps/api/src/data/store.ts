@@ -297,13 +297,6 @@ class UnifiedDataStore {
   public mfaChallenges: Map<string, { userId: string; code: string; expiresAt: Date; attempts: number }> = new Map();
   public passwordResetTokens: Map<string, { userId: string; token: string; expiresAt: Date }> = new Map();
 
-  /**
-   * Codes that have been delivered but not yet collected, keyed by the
-   * one-time challenge token. The token itself is the only credential
-   * required to collect the code, and each entry is single-use.
-   */
-  public pendingVerificationCodes: Map<string, { code: string; expiresAt: Date; consumed: boolean }> = new Map();
-
   // File storage path for persistent storage
   private storageDir = path.resolve(process.cwd(), 'data');
   private storageFile = path.resolve(process.cwd(), 'data', 'db.json');
@@ -382,7 +375,7 @@ class UnifiedDataStore {
       { id: 'prog-rou-schengen', countryId: 'country-rou', programName: 'Romania General Labor & Construction Schengen Permit', visaCategory: 'Work Permit', description: 'General Inspectorate for Immigration (IGI) authenticated work permits for warehouse, logistics, and building construction.', eligibility: 'Age 20-45. Fit for physical work. Clean criminal record attested by foreign ministry.', requiredDocuments: ['Passport (min 2 years validity)', 'Police Clearance Certificate', 'Medical Examination Report', 'Biometric Photos'], serviceInformation: 'Official Work Authorization (Aviz de Munca) issued in Romania followed by National Long-Stay D/AM Visa application.', startDate: '2026-01-01', endDate: '2026-12-31', programStatus: 'ACTIVE', bookingEnabled: true, displayOrder: 1, defaultProcessingDays: 90, consultationFee: 0, createdAt: new Date(), updatedAt: new Date() },
       { id: 'prog-can-student', countryId: 'country-can', programName: 'Canada University Study Permit & Post-Graduation Work Pathway', visaCategory: 'Student Visa', description: 'Direct admission to Designated Learning Institutions (DLI) with Post-Graduation Work Permit (PGWP) eligibility.', eligibility: 'High School / Bachelor with IELTS 6.0+ (minimum 6.0 each band). Verifiable tuition fee and living expenses funding.', requiredDocuments: ['Letters of Acceptance (LOA) from DLI', 'Proof of Financial Support / GIC', 'Statement of Purpose (SOP)', 'Academic Transcripts'], serviceInformation: 'Immigration, Refugees and Citizenship Canada (IRCC) compliant file preparation, financial portfolio audit, and biometrics tracking.', startDate: '2026-01-01', endDate: '2026-12-31', programStatus: 'ACTIVE', bookingEnabled: true, displayOrder: 1, defaultProcessingDays: 60, consultationFee: 0, createdAt: new Date(), updatedAt: new Date() },
       { id: 'prog-gbr-cos', countryId: 'country-gbr', programName: 'UK Higher Education (Tier 4 / Student Route) & Skilled Worker', visaCategory: 'Student Visa', description: 'CAS-sponsored university applications across top British institutions with graduate route post-study work visa rights.', eligibility: 'Minimum 60% in previous education. UKVI IELTS or accepted English test. Proof of maintenance funds for 28 days.', requiredDocuments: ['CAS Statement from Licensed Sponsor', 'Bank Solvency & 28-day Statement', 'TB Test Certificate', 'Academic Documents'], serviceInformation: 'Full UK Visas and Immigration (UKVI) online portal management, document checklist audit, and VFS Global appointment booking.', startDate: '2026-01-01', endDate: '2026-12-31', programStatus: 'ACTIVE', bookingEnabled: true, displayOrder: 1, defaultProcessingDays: 30, consultationFee: 0, createdAt: new Date(), updatedAt: new Date() },
-      { id: 'prog-bih-wp', countryId: 'country-bih', programName: 'Bosnia Work Permit (Employment Visa)', visaCategory: 'Work Permit', description: 'Official Bosnia employment and work authorization permit for construction, manufacturing, and services sectors.', eligibility: 'Age 20-45. Valid passport with minimum 2 years validity. Clean police clearance.', requiredDocuments: ['Passport Copy', 'Police Clearance Certificate', 'Medical Fitness Certificate', 'Passport Photos'], serviceInformation: 'Ministry of Security & Employment Bureau accredited work authorization.', startDate: '2026-01-01', endDate: '2026-12-31', programStatus: 'ACTIVE', bookingEnabled: true, displayOrder: 1, defaultProcessingDays: 45, consultationFee: 0, createdAt: new Date(), updatedAt: new Date() },
+      { id: 'prog-bih-wp', countryId: 'country-bih', programName: 'Bosnia Work Permit (Employment Visa)', visaCategory: 'Work Permit', description: 'Official Bosnia employment and work authorization permit for construction, manufacturing, and services sectors.', eligibility: 'Age 20-45. Valid passport with minimum 2 years validity. Clean police clearance.', requiredDocuments: ['Passport Copy', 'Police Clearance Certificate', 'Medical Fitness Certificate', 'Passport Photos'], serviceInformation: 'Ministry of Security & Employment Bureau accredited work authorization.', startDate: '2026-01-01', endDate: '2026-12-31', programStatus: 'ACTIVE', bookingEnabled: true, displayOrder: 1, defaultProcessingDays: 120, consultationFee: 0, createdAt: new Date(), updatedAt: new Date() },
       { id: 'prog-srb-wp', countryId: 'country-srb', programName: 'Serbia Work Permit (Employment Visa)', visaCategory: 'Work Permit', description: 'Official Serbia employment and work authorization permit for construction, manufacturing, and skilled services sectors.', eligibility: 'Age 20-45. Valid passport with minimum 2 years validity. Clean police clearance.', requiredDocuments: ['Passport Copy', 'Police Clearance Certificate', 'Medical Fitness Certificate', 'Passport Photos'], serviceInformation: 'Ministry of Interior single permit and employment bureau accredited work authorization.', startDate: '2026-01-01', endDate: '2026-12-31', programStatus: 'ACTIVE', bookingEnabled: true, displayOrder: 1, defaultProcessingDays: 120, consultationFee: 0, createdAt: new Date(), updatedAt: new Date() },
       { id: 'prog-mkd-wp', countryId: 'country-mkd', programName: 'North Macedonia Work Permit (Employment Visa)', visaCategory: 'Work Permit', description: 'Official North Macedonia employment authorization and work permit for manufacturing, construction, and hospitality sectors.', eligibility: 'Age 20-45. Valid passport with minimum 2 years validity. Clean police clearance.', requiredDocuments: ['Passport Copy', 'Police Clearance Certificate', 'Medical Fitness Certificate', 'Passport Photos'], serviceInformation: 'Ministry of Labour and Social Policy accredited work authorization and residence permit.', startDate: '2026-01-01', endDate: '2026-12-31', programStatus: 'ACTIVE', bookingEnabled: true, displayOrder: 1, defaultProcessingDays: 120, consultationFee: 0, createdAt: new Date(), updatedAt: new Date() },
     ];
@@ -393,7 +386,7 @@ class UnifiedDataStore {
       { id: 'cat-mys-st', countryId: 'country-mys', name: 'Student Visa (EMGS)', code: 'ST', description: 'Higher education visa approved through Education Malaysia Global Services.', defaultProcessingDays: 45, isActive: true },
       { id: 'cat-cyp-wp', countryId: 'country-cyp', name: 'Employment Entry Visa', code: 'WP', description: 'Work contract permit authenticated by Cyprus Ministry of Labour.', defaultProcessingDays: 75, isActive: true },
       { id: 'cat-blr-wp', countryId: 'country-blr', name: 'Official Work Permit', code: 'WP', description: 'Belarus Ministry of Internal Affairs official work invitation and permit.', defaultProcessingDays: 60, isActive: true },
-      { id: 'cat-bih-wp', countryId: 'country-bih', name: 'Work Permit (Employment Visa)', code: 'WP', description: 'Official Bosnia employment and work permit.', defaultProcessingDays: 45, isActive: true },
+      { id: 'cat-bih-wp', countryId: 'country-bih', name: 'Work Permit (Employment Visa)', code: 'WP', description: 'Official Bosnia employment and work permit.', defaultProcessingDays: 120, isActive: true },
       { id: 'cat-srb-wp', countryId: 'country-srb', name: 'Work Permit (Employment Visa)', code: 'WP', description: 'Official Serbia employment and work permit.', defaultProcessingDays: 120, isActive: true },
       { id: 'cat-mkd-wp', countryId: 'country-mkd', name: 'Work Permit (Employment Visa)', code: 'WP', description: 'Official North Macedonia employment and work permit.', defaultProcessingDays: 120, isActive: true },
     ];
@@ -553,14 +546,14 @@ class UnifiedDataStore {
       { id: 'role-client', name: RoleName.CLIENT, description: 'Client Read-only' },
     ];
 
-    // Precomputed bcrypt hashes for synchronous zero-delay startup
-    // Mehedi@TVG
+    // Precomputed bcrypt hashes for synchronous zero-delay startup.
+    // The plaintexts of these passwords were previously published in this
+    // public repository, so these hashes MUST be rotated before any
+    // deployment (see SECURITY_REVIEW.md). Every seeded account is forced
+    // to change its password at first sign-in.
     const adminHash = '$2a$10$qwGh9pkksb.CmE.myDG.9Orju2Xj7uVxLASStwU1Rf4N.H78KSOF6';
-    // AdminSecureGate2026!
     const legacyAdminHash = '$2a$10$aZk7jNwT.wW/sC1CanpW2ek.Eah/ES6H.zC.4IBepXlG2.mAO02g6';
-    // StaffGate2026!
     const staffHash = '$2a$10$5ArF4FeJyyJkhmSTRPqA5eqG9tg4xsio7pMsjK/lPU4WxBwqsyK6m';
-    // ClientPass2026!
     const clientHash = '$2a$10$fhKVuxav/DADYQ5CyV8v8usRTo/ulBbs6qrLO.PCuMMuwkbENSZdy';
 
     // Users
@@ -573,7 +566,7 @@ class UnifiedDataStore {
         roleId: 'role-admin',
         role: RoleName.ADMIN,
         isActive: true,
-        mustChangePassword: false,
+        mustChangePassword: true,
         failedLoginAttempts: 0,
         lockedUntil: null,
         lastLoginAt: null,
@@ -588,7 +581,7 @@ class UnifiedDataStore {
         roleId: 'role-admin',
         role: RoleName.ADMIN,
         isActive: true,
-        mustChangePassword: false,
+        mustChangePassword: true,
         failedLoginAttempts: 0,
         lockedUntil: null,
         lastLoginAt: null,
@@ -603,7 +596,7 @@ class UnifiedDataStore {
         roleId: 'role-staff',
         role: RoleName.STAFF,
         isActive: true,
-        mustChangePassword: false,
+        mustChangePassword: true,
         failedLoginAttempts: 0,
         lockedUntil: null,
         lastLoginAt: null,
@@ -618,7 +611,7 @@ class UnifiedDataStore {
         roleId: 'role-client',
         role: RoleName.CLIENT,
         isActive: true,
-        mustChangePassword: false,
+        mustChangePassword: true,
         failedLoginAttempts: 0,
         lockedUntil: null,
         lastLoginAt: null,
@@ -633,7 +626,7 @@ class UnifiedDataStore {
         roleId: 'role-client',
         role: RoleName.CLIENT,
         isActive: true,
-        mustChangePassword: false,
+        mustChangePassword: true,
         failedLoginAttempts: 0,
         lockedUntil: null,
         lastLoginAt: null,

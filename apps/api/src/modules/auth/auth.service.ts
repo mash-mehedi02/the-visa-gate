@@ -4,7 +4,6 @@ import { generateToken, TokenPayload } from '../../utils/jwt';
 import { RoleName } from '@thevisagate/shared';
 import { AuditService } from '../audit-logs/audit.service';
 import { VerificationDeliveryService } from '../../services/verification-delivery.service';
-import { config } from '../../config';
 import crypto from 'crypto';
 
 export interface LoginResult {
@@ -70,22 +69,9 @@ export class AuthService {
       throw { statusCode: 423, message: `Account temporarily locked due to multiple failed attempts. Try again in ${waitMinutes} minutes.` };
     }
 
-    // Password authentication check
-    let isMatch = await comparePassword(passwordPlain, user.passwordHash);
-
-    // If client user and password does not match passwordHash, check if it matches the client's registered NID
-    if (!isMatch && user.role === RoleName.CLIENT) {
-      const cli = store.clients.find((c) => c.userId === user.id);
-      if (cli && cli.nidEncrypted) {
-        try {
-          const decNid = decryptSensitiveData(cli.nidEncrypted).trim().toUpperCase().replace(/\s+/g, '');
-          const inputNid = passwordPlain.trim().toUpperCase().replace(/\s+/g, '');
-          if (decNid && decNid === inputNid) {
-            isMatch = true;
-          }
-        } catch {}
-      }
-    }
+    // Password authentication check. A National ID is an identifier, never a
+    // credential: it must not be accepted as a password.
+    const isMatch = await comparePassword(passwordPlain, user.passwordHash);
 
     if (!isMatch) {
       user.failedLoginAttempts += 1;
@@ -122,18 +108,15 @@ export class AuthService {
         userAgent,
       });
 
-      // Deliver the code to the employee's registered contact.
+      // Deliver the code to the employee's registered contact. When email
+      // delivery is unavailable this throws: staff sign-in must fail loudly
+      // rather than fall back to a retrievable code (see SECURITY_REVIEW.md).
       const delivery = await VerificationDeliveryService.deliverCode(
         user.id,
         user.email,
         challengeCode,
-        'SIGN_IN',
-        mfaToken
+        'SIGN_IN'
       );
-
-      if (!config.smtp.host) {
-        console.log(`[AUTH] MFA verification code for ${user.email}: ${challengeCode}`);
-      }
 
       // Mask destination email or phone for MFA display
       let maskedDestination = delivery.destination;
@@ -282,7 +265,7 @@ export class AuthService {
     // Client-facing recovery must never confirm or deny whether an account
     // exists, so the same message is returned in every case.
     const genericMessage =
-      'If an account matches the details you provided, a password reset link has been sent to the contact registered on the account.';
+      'If an account matches the details you provided, a password reset token has been sent to the contact registered on the account.';
 
     if (!user) {
       return { message: genericMessage };
@@ -301,7 +284,9 @@ export class AuthService {
       throw { statusCode: 400, message: 'Enter the last 4 digits of the phone number registered on your file.' };
     }
     if (!client.phone.endsWith(phoneLastDigits.trim())) {
-      throw { statusCode: 400, message: 'Provided verification details do not match our records.' };
+      // Return the same generic message as for an unknown identifier: a
+      // distinct error here would confirm that the passport number exists.
+      return { message: genericMessage };
     }
 
     const resetToken = `pwd_${crypto.randomBytes(24).toString('hex')}`;
@@ -314,14 +299,19 @@ export class AuthService {
     });
 
     // The reset token is delivered out-of-band to the registered contact and
-    // is never returned in the API response.
-    await VerificationDeliveryService.deliverCode(
-      user.id,
-      user.email,
-      resetToken,
-      'PASSWORD_RESET',
-      resetToken
-    );
+    // is never returned in the API response. If delivery is down we still
+    // return the generic message (a failure here would confirm the account
+    // exists); the office can help the client by phone instead.
+    try {
+      await VerificationDeliveryService.deliverCode(
+        user.id,
+        user.email,
+        resetToken,
+        'PASSWORD_RESET'
+      );
+    } catch {
+      console.warn('[AUTH] Password-reset delivery failed; token issued but not delivered.');
+    }
 
     await AuditService.record({
       userId: user.id,

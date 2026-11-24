@@ -9,7 +9,6 @@ import {
 } from '@thevisagate/shared';
 import { sendSuccess, sendError } from '../../utils/response';
 import { AuthenticatedRequest } from '../../middleware/auth.middleware';
-import { VerificationDeliveryService } from '../../services/verification-delivery.service';
 import { config } from '../../config';
 
 export class AuthController {
@@ -32,7 +31,8 @@ export class AuthController {
         return sendSuccess(res, result, 'MFA code sent to your registered device/email.');
       }
 
-      // Set secure HTTP-only cookie
+      // Set secure HTTP-only cookie. The token is never returned in the
+      // response body, so browser JavaScript cannot read or copy it.
       if (result.token) {
         res.cookie('token', result.token, {
           httpOnly: true,
@@ -42,7 +42,8 @@ export class AuthController {
         });
       }
 
-      return sendSuccess(res, result, 'Login successful');
+      const { token: _token, ...body } = result;
+      return sendSuccess(res, body, 'Login successful');
     } catch (error: any) {
       next(error);
     }
@@ -65,39 +66,8 @@ export class AuthController {
         });
       }
 
-      return sendSuccess(res, result, 'MFA verification successful');
-    } catch (error) {
-      next(error);
-    }
-  }
-
-  /**
-   * Returns a verification code that could not be delivered over SMTP, so the
-   * person who started the sign-in can still complete it.
-   *
-   * The caller must present the one-time challenge token, and the code is
-   * single-use. This is the delivery fallback, not an authentication bypass:
-   * the code still has to match the issued challenge.
-   */
-  static async collectVerificationCode(req: Request, res: Response, next: NextFunction) {
-    try {
-      const token = (req.body?.token || req.query?.token) as string | undefined;
-      if (!token) {
-        return sendError(res, 'A challenge token is required', 400);
-      }
-
-      const code = VerificationDeliveryService.collectCode(token);
-      if (!code) {
-        return sendError(
-          res,
-          'No code is available for this request. Please start the sign-in again.',
-          404,
-          null,
-          'CODE_NOT_AVAILABLE'
-        );
-      }
-
-      return sendSuccess(res, { code }, 'Verification code retrieved');
+      const { token: _token, ...body } = result;
+      return sendSuccess(res, body, 'MFA verification successful');
     } catch (error) {
       next(error);
     }
