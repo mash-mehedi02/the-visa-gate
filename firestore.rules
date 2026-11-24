@@ -1,0 +1,134 @@
+rules_version = '2';
+
+// THE VISA GATE — Firestore Security Rules
+// ---------------------------------------------------------------
+// Deploy with:  firebase deploy --only firestore:rules
+// (or paste into Firebase Console > Firestore Database > Rules)
+//
+// READ THIS FIRST — why these rules are deny-by-default:
+// The Visa Gate API authenticates users with its own cookie JWT; it does
+// NOT use Firebase Authentication, and the web app never reads Firestore
+// directly (all data flows through the REST API). The API server mirrors
+// data to Firestore with the Firebase Admin SDK (service account), which
+// bypasses these rules entirely. Because there is no Firebase Auth identity
+// on any direct client connection, there is NO rule that can safely tell
+// "the server" apart from "anyone on the internet with the public web
+// apiKey". Any rule that allowed unauthenticated reads/writes would
+// therefore be public access to client PII (names, phones, masked
+// passport/NID, documents). So:
+//
+//   * Public website data (countries, visa_programs) is world-readable —
+//     it contains no personal data and is already published on the site.
+//   * Every collection that can contain personal data (clients,
+//     applications, documents, inquiries, audit_logs) denies ALL direct
+//     access. Staff and clients reach that data only through the API,
+//     which enforces role checks, ownership checks and audit logging.
+//
+// The role-based rules below are kept as a COMMENTED template. They only
+// become safe to enable after Firebase Authentication is wired up with
+// custom claims (`role` and `clientId` on the ID token) AND the server
+// stops using the unauthenticated client SDK for mirroring. Do not
+// uncomment them before both of those land — until then `request.auth`
+// is null for every caller, including the API server's client-SDK mirror.
+//
+// Deployment order (do not skip step 1):
+//   1. Set FIREBASE_SERVICE_ACCOUNT_JSON (or FIREBASE_SERVICE_ACCOUNT_PATH)
+//      on the API server so the mirror uses the Admin SDK. Without it the
+//      mirror falls back to the unauthenticated client SDK and THESE RULES
+//      WILL REJECT ITS WRITES (the mirror logs a warning and the API keeps
+//      working from its local store, but Firestore stops receiving updates).
+//   2. Deploy these rules.
+//   3. Restart the API server and confirm "[Firebase] Admin SDK mirror
+//      active" in the logs.
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Deny everything unless a rule below explicitly allows it.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Public catalogue data — no personal data. World-readable so the
+    // public site can be served from Firestore if ever needed; the API
+    // is the only writer (Admin SDK bypasses rules, so no write rule
+    // is needed or granted here).
+    match /countries/{countryId} {
+      allow read: if true;
+      allow write: if false;
+    }
+    match /visa_programs/{programId} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    // Personal data — no direct access from any client, authenticated
+    // or not. All access goes through the API server (Admin SDK).
+    match /clients/{clientId} {
+      allow read, write: if false;
+    }
+    match /applications/{applicationId} {
+      allow read, write: if false;
+    }
+    match /documents/{documentId} {
+      allow read, write: if false;
+    }
+    match /inquiries/{inquiryId} {
+      allow read, write: if false;
+    }
+    match /audit_logs/{logId} {
+      allow read, write: if false;
+    }
+  }
+}
+
+// -----------------------------------------------------------------
+// TEMPLATE ONLY — DO NOT ENABLE until Firebase Auth custom claims
+// (`role`, `clientId`) exist and the Admin-SDK mirror is live.
+// (Kept as a comment so the intended per-role shape is on record.)
+//
+// function isSignedIn() { return request.auth != null; }
+// function role() { return request.auth.token.role; }
+// function isStaff() { return isSignedIn() && (role() == 'STAFF' || role() == 'ADMIN' || role() == 'SUPER_ADMIN'); }
+// function isAdmin() { return isSignedIn() && (role() == 'ADMIN' || role() == 'SUPER_ADMIN'); }
+// function ownClientId() { return request.auth.token.clientId; }
+//
+// match /clients/{clientId} {
+//   allow read: if isStaff() || (isSignedIn() && role() == 'CLIENT' && clientId == ownClientId());
+//   allow write: if isAdmin();
+// }
+// match /applications/{applicationId} {
+//   allow read: if isStaff() || (isSignedIn() && role() == 'CLIENT'
+//     && resource.data.clientId == ownClientId());
+//   allow create, update, delete: if isStaff();
+// }
+// match /documents/{documentId} {
+//   // Document metadata only — file bytes never live in Firestore.
+//   // Clients may read their own documents' metadata; they must never
+//   // write document records directly (uploads go through the API,
+//   // which stores the Cloudinary public_id / secure_url).
+//   allow read: if isStaff() || (isSignedIn() && role() == 'CLIENT'
+//     && resource.data.clientId == ownClientId());
+//   allow create, update, delete: if isStaff();
+// }
+// match /inquiries/{inquiryId} {
+//   allow read: if isStaff();
+//   allow create: if true; // public contact form; server-validated
+//   allow update, delete: if isAdmin();
+// }
+// match /audit_logs/{logId} {
+//   allow read: if isAdmin();
+//   allow create, update, delete: if false; // server (Admin SDK) only
+// }
+//
+// Known limits of rules alone (enforced in the API instead):
+//   * Rules cannot check that a document upload is an image, virus-free
+//     or under a size limit — the API validates type/size and scans
+//     before storing (see DocumentService.scanFileSecurity).
+//   * Rules cannot enforce "client may only set their own profile pic"
+//     beyond matching clientId — the API checks ownership on every call.
+//   * Rules cannot hide individual fields: a client who can read a
+//     document can read every field in it, so the API strips internal
+//     staff notes and local storage paths before mirroring
+//     (see FirebaseDatabaseService.syncDocument).
+// -----------------------------------------------------------------
