@@ -23,7 +23,7 @@ export const ContactStrip: React.FC<{ className?: string; tone?: 'light' | 'dark
 }) => {
   const isDark = tone === 'dark';
   const itemClass = `flex items-start gap-2.5 text-xs ${isDark ? 'text-slate-300' : 'text-slate-600'}`;
-  const labelClass = `block text-[10px] font-bold uppercase tracking-wider ${isDark ? 'text-brand-gold' : 'text-brand-gold-dark'}`;
+  const labelClass = `block text-xs font-bold uppercase tracking-wider ${isDark ? 'text-brand-gold' : 'text-brand-gold-dark'}`;
   const valueClass = `block ${isDark ? 'text-white' : 'text-brand-navy'} font-semibold`;
 
   return (
@@ -35,7 +35,7 @@ export const ContactStrip: React.FC<{ className?: string; tone?: 'light' | 'dark
           <a href={`tel:${OFFICE.hotline.replace(/\s/g, '')}`} className={`${valueClass} hover:underline`}>
             {OFFICE.hotline}
           </a>
-          <span className="block text-[11px] text-slate-500">{OFFICE.hotlineAlt}</span>
+          <span className="block text-xs text-slate-500">{OFFICE.hotlineAlt}</span>
         </span>
       </div>
 
@@ -80,7 +80,7 @@ export const ContactCTA: React.FC = () => (
     <div className="bg-brand-navy rounded-2xl p-6 sm:p-10 border border-white/10">
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
         <div className="space-y-3">
-          <span className="inline-flex items-center gap-2 text-[11px] font-bold uppercase tracking-wider text-brand-gold bg-brand-gold/10 border border-brand-gold/25 px-3 py-1 rounded-full">
+          <span className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-brand-gold bg-brand-gold/10 border border-brand-gold/25 px-3 py-1 rounded-full">
             <MessageCircle className="w-3.5 h-3.5" />
             Talk to a counsellor
           </span>

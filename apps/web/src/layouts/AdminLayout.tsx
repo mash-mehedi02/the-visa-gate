@@ -30,7 +30,7 @@ export const AdminLayout: React.FC = () => {
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
-  const isAdmin = user?.role === RoleName.ADMIN;
+  const isAdmin = user?.role === RoleName.ADMIN || user?.role === RoleName.SUPER_ADMIN;
 
   const navItems = [
     { name: 'Dashboard', path: '/admin/dashboard', icon: LayoutDashboard },
@@ -100,7 +100,7 @@ export const AdminLayout: React.FC = () => {
 
         {/* Navigation Items */}
         <div className="flex-1 py-6 px-3 space-y-1.5 overflow-y-auto">
-          <div className="px-3 pb-2 text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+          <div className="px-3 pb-2 text-xs font-semibold uppercase tracking-wider text-slate-400">
             Operations & Control
           </div>
           {navItems.map((item) => {
@@ -123,7 +123,7 @@ export const AdminLayout: React.FC = () => {
             );
           })}
 
-          <div className="pt-6 px-3 pb-2 text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+          <div className="pt-6 px-3 pb-2 text-xs font-semibold uppercase tracking-wider text-slate-400">
             External Links
           </div>
           <Link
@@ -145,7 +145,7 @@ export const AdminLayout: React.FC = () => {
               </div>
               <div className="overflow-hidden">
                 <p className="text-xs font-bold text-white truncate max-w-[120px]">{user?.name}</p>
-                <span className="inline-block text-[10px] text-brand-gold uppercase tracking-wider font-semibold">
+                <span className="inline-block text-xs text-brand-gold uppercase tracking-wider font-semibold">
                   {user?.role}
                 </span>
               </div>
@@ -201,7 +201,7 @@ export const AdminLayout: React.FC = () => {
             <div className="flex items-center gap-3">
               <div className="text-right hidden md:block">
                 <p className="text-xs font-bold text-brand-navy leading-none">{user?.name}</p>
-                <p className="text-[10px] text-slate-500 mt-0.5">{user?.identifier}</p>
+                <p className="text-xs text-slate-500 mt-0.5">{user?.identifier}</p>
               </div>
               <div className="w-8 h-8 rounded-full bg-brand-navy text-brand-gold font-bold flex items-center justify-center text-xs shadow-xs">
                 {user?.name?.[0]?.toUpperCase() || 'A'}

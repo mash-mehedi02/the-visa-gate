@@ -17,13 +17,11 @@ export interface LoginResponse {
   requiresMfa?: boolean;
   mfaToken?: string;
   maskedDestination?: string;
-  token?: string;
   user?: AuthUser;
 }
 
 interface AuthContextType {
   user: AuthUser | null;
-  token: string | null;
   role: RoleName | null;
   isAuthenticated: boolean;
   isLoading: boolean;
@@ -36,27 +34,22 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [user, setUser] = useState<AuthUser | null>(() => {
-    const saved = localStorage.getItem('tvg_user');
-    return saved ? JSON.parse(saved) : null;
-  });
-  const [token, setToken] = useState<string | null>(() => localStorage.getItem('tvg_token'));
+  const [user, setUser] = useState<AuthUser | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
+  // The session lives in the httpOnly cookie set by the server, so the only
+  // way to know who is signed in is to ask the server. No token or user
+  // record is ever kept in browser storage.
   const fetchCurrentUser = async () => {
     try {
-      if (localStorage.getItem('tvg_token')) {
-        const res: any = await api.get('/auth/me');
-        if (res.data) {
-          setUser(res.data);
-          localStorage.setItem('tvg_user', JSON.stringify(res.data));
-        }
+      const res: any = await api.get('/auth/me');
+      if (res.data) {
+        setUser(res.data);
+      } else {
+        setUser(null);
       }
     } catch {
       setUser(null);
-      setToken(null);
-      localStorage.removeItem('tvg_token');
-      localStorage.removeItem('tvg_user');
     } finally {
       setIsLoading(false);
     }
@@ -78,27 +71,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       };
     }
 
-    const { token: receivedToken, user: receivedUser } = data;
-    setToken(receivedToken);
+    const { user: receivedUser } = data;
     setUser(receivedUser);
-    localStorage.setItem('tvg_token', receivedToken);
-    localStorage.setItem('tvg_user', JSON.stringify(receivedUser));
 
     return {
       requiresMfa: false,
-      token: receivedToken,
       user: receivedUser,
     };
   };
 
   const verifyMfa = async (mfaToken: string, code: string): Promise<AuthUser> => {
     const res: any = await api.post('/auth/verify-mfa', { mfaToken, code });
-    const { token: receivedToken, user: receivedUser } = res.data;
+    const { user: receivedUser } = res.data;
 
-    setToken(receivedToken);
     setUser(receivedUser);
-    localStorage.setItem('tvg_token', receivedToken);
-    localStorage.setItem('tvg_user', JSON.stringify(receivedUser));
 
     return receivedUser;
   };
@@ -108,16 +94,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       await api.post('/auth/logout');
     } catch {}
     setUser(null);
-    setToken(null);
-    localStorage.removeItem('tvg_token');
-    localStorage.removeItem('tvg_user');
   };
 
   return (
     <AuthContext.Provider
       value={{
         user,
-        token,
         role: user?.role || null,
         isAuthenticated: !!user,
         isLoading,

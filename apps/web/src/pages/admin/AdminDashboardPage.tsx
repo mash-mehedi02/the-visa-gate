@@ -226,7 +226,7 @@ export const AdminDashboardPage: React.FC = () => {
                     {app.date}
                   </td>
                   <td className="py-3.5 px-6 text-right">
-                    <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800 uppercase tracking-wider">
+                    <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-800 uppercase tracking-wider">
                       {app.status}
                     </span>
                   </td>

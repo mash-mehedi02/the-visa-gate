@@ -41,7 +41,7 @@ export const ClientLayout: React.FC = () => {
           <div className="flex items-center gap-2 sm:gap-3 shrink-0">
             <div className="hidden sm:flex flex-col text-right">
               <span className="text-xs font-bold text-white truncate max-w-[180px]">{user?.name}</span>
-              <span className="text-[10px] text-brand-gold font-mono">
+              <span className="text-xs text-brand-gold font-mono">
                 Passport: {user?.clientProfile?.passportMasked || user?.identifier}
               </span>
             </div>
@@ -73,7 +73,7 @@ export const ClientLayout: React.FC = () => {
 
         {/* Mobile identity strip */}
         <div className="xs:hidden bg-brand-navy-light border-t border-white/10 px-4 py-1.5">
-          <p className="text-[11px] text-slate-300 truncate">
+          <p className="text-xs text-slate-300 truncate">
             <span className="text-white font-semibold">{user?.name}</span>
             <span className="mx-1.5 text-slate-500">•</span>
             <span className="font-mono text-brand-gold">
@@ -99,7 +99,7 @@ export const ClientLayout: React.FC = () => {
             </a>{' '}
             (Sat – Thu, 11 AM – 6 PM).
           </p>
-          <p className="text-[11px] text-slate-400">
+          <p className="text-xs text-slate-400">
             <Link to="/privacy" className="hover:text-slate-600 underline underline-offset-2">
               Privacy
             </Link>

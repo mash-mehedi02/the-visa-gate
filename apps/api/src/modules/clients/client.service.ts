@@ -256,10 +256,13 @@ export class ClientService {
       (u) => u.identifier.toUpperCase() === normalizedPassport
     );
     if (existingUser) {
-      throw { statusCode: 409, message: `A client with passport number '${dto.passportNumber}' already exists.` };
+      throw { statusCode: 409, message: 'A client with this passport number already exists.' };
     }
 
-    const tempPassword = dto.temporaryPassword || `TVG@${crypto.randomInt(100000, 999999)}`;
+    // Temporary passwords are random 16-character values with no fixed pattern.
+    // The new client must change it at first sign-in (mustChangePassword).
+    const tempPassword =
+      dto.temporaryPassword || crypto.randomBytes(12).toString('base64url');
     const passHash = await hashPassword(tempPassword);
 
     const userId = `usr-cli-${crypto.randomUUID()}`;
@@ -276,7 +279,7 @@ export class ClientService {
       roleId: 'role-client',
       role: RoleName.CLIENT,
       isActive: true,
-      mustChangePassword: false,
+      mustChangePassword: true,
       failedLoginAttempts: 0,
       lockedUntil: null,
       lastLoginAt: null,

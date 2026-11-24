@@ -22,7 +22,7 @@
 
   /* Visible, high-contrast focus ring for every interactive element. */
   :focus-visible {
-    outline: 2px solid #B89445;
+    outline: 2px solid #8A6D2B;
     outline-offset: 2px;
     border-radius: 4px;
   }
@@ -73,11 +73,11 @@
   }
 
   .field-hint {
-    @apply text-[11px] text-slate-500 mt-1 leading-relaxed;
+    @apply text-xs text-slate-500 mt-1 leading-relaxed;
   }
 
   .field-error {
-    @apply text-[11px] text-red-600 mt-1 leading-relaxed font-medium;
+    @apply text-xs text-red-600 mt-1 leading-relaxed font-medium;
   }
 
   /* Horizontally scrollable region for wide data tables on small screens. */

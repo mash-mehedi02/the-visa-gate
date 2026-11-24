@@ -20,7 +20,7 @@ export const BrandLogo: React.FC<BrandLogoProps> = ({
     imgClass = 'h-8 sm:h-9 w-auto max-w-[170px] object-contain';
     containerClass = 'bg-white px-2.5 py-1.5 rounded-lg shadow-xs border border-white/10';
   } else if (variant === 'footer') {
-    imgClass = 'h-11 sm:h-13 w-auto max-w-[220px] sm:max-w-[260px] object-contain';
+    imgClass = 'h-11 sm:h-14 w-auto max-w-[220px] sm:max-w-[260px] object-contain';
     containerClass = 'bg-white px-3.5 py-2 rounded-xl shadow-md border border-white/10';
   } else if (variant === 'hero') {
     imgClass = 'h-12 sm:h-16 w-auto max-w-[240px] sm:max-w-[300px] object-contain';

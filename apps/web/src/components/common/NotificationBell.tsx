@@ -90,7 +90,7 @@ export const NotificationBell: React.FC = () => {
       >
         <Bell className="w-4 h-4" />
         {unreadCount > 0 && (
-          <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-brand-gold text-brand-navy text-[10px] font-bold flex items-center justify-center border-2 border-white">
+          <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-brand-gold text-brand-navy text-xs font-bold flex items-center justify-center border-2 border-white">
             {unreadCount > 9 ? '9+' : unreadCount}
           </span>
         )}
@@ -109,7 +109,7 @@ export const NotificationBell: React.FC = () => {
                 <button
                   type="button"
                   onClick={markAllRead}
-                  className="inline-flex items-center gap-1 px-2 py-1.5 rounded text-[11px] font-semibold text-brand-navy hover:bg-brand-navy/5 min-h-[36px]"
+                  className="inline-flex items-center gap-1 px-2 py-1.5 rounded text-xs font-semibold text-brand-navy hover:bg-brand-navy/5 min-h-[36px]"
                 >
                   <CheckCheck className="w-3.5 h-3.5" />
                   <span>Mark all read</span>
@@ -119,7 +119,7 @@ export const NotificationBell: React.FC = () => {
                 type="button"
                 onClick={() => setOpen(false)}
                 aria-label="Close notifications"
-                className="p-1.5 rounded text-slate-400 hover:text-slate-700 min-h-[36px] min-w-[36px] flex items-center justify-center"
+                className="p-1.5 rounded text-slate-500 hover:text-slate-700 min-h-[44px] min-w-[44px] flex items-center justify-center"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -128,9 +128,9 @@ export const NotificationBell: React.FC = () => {
 
           <div className="max-h-96 overflow-y-auto">
             {loading && items.length === 0 ? (
-              <p className="px-4 py-8 text-center text-xs text-slate-400">Loading notifications…</p>
+              <p className="px-4 py-8 text-center text-xs text-slate-500">Loading notifications…</p>
             ) : items.length === 0 ? (
-              <p className="px-4 py-8 text-center text-xs text-slate-400">
+              <p className="px-4 py-8 text-center text-xs text-slate-500">
                 You have no notifications right now.
               </p>
             ) : (
@@ -158,10 +158,10 @@ export const NotificationBell: React.FC = () => {
                               <ShieldAlert className="w-3.5 h-3.5 text-rose-500 shrink-0" />
                             )}
                           </span>
-                          <span className="block text-[11px] text-slate-600 leading-relaxed mt-0.5 break-words">
+                          <span className="block text-xs text-slate-600 leading-relaxed mt-0.5 break-words">
                             {n.message}
                           </span>
-                          <span className="block text-[10px] text-slate-400 mt-1">
+                          <span className="block text-xs text-slate-500 mt-1">
                             {new Date(n.createdAt).toLocaleString()}
                           </span>
                         </span>

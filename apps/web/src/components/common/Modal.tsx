@@ -138,7 +138,7 @@ export const Modal: React.FC<ModalProps> = ({
             type="button"
             onClick={onClose}
             aria-label="Close dialog"
-            className="p-1.5 rounded-md text-slate-400 hover:text-slate-700 hover:bg-slate-100 shrink-0"
+            className="p-2.5 min-h-[44px] min-w-[44px] rounded-md text-slate-500 hover:text-slate-700 hover:bg-slate-100 shrink-0 flex items-center justify-center"
           >
             <X className="w-5 h-5" />
           </button>

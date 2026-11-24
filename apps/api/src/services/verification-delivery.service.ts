@@ -1,9 +1,8 @@
 import nodemailer, { Transporter } from 'nodemailer';
 import { config } from '../config';
-import { store } from '../data/store';
 
 export interface VerificationDelivery {
-  channel: 'email' | 'in-app';
+  channel: 'email';
   destination: string;
   delivered: boolean;
 }
@@ -25,23 +24,25 @@ function getTransporter(): Transporter | null {
 }
 
 /**
- * Delivers one-time verification codes to employees.
+ * Delivers one-time verification codes to employees and password-reset
+ * tokens to clients, by email only.
  *
- * When SMTP is configured the code is emailed to the address on the staff
- * account. When SMTP is not configured the code is written to the in-app
- * notification inbox instead, which the signed-in employee can open from the
- * console notification bell.
+ * There is deliberately no fallback. An earlier version parked the code
+ * against the challenge token (retrievable from an unauthenticated endpoint)
+ * and wrote it to the in-app notification inbox when SMTP was unconfigured,
+ * which meant anyone holding the challenge token returned by the login
+ * response could complete MFA without access to the registered contact.
+ * Delivery now fails loudly instead: SMTP must be configured before staff
+ * can sign in with MFA (see docs/setup-guide.md and SECURITY_REVIEW.md).
  *
- * The code is never returned in an API response and never written to the
- * console log.
+ * The code is never returned in an API response and never written to a log.
  */
 export class VerificationDeliveryService {
   static async deliverCode(
     userId: string,
     email: string | null,
     code: string,
-    purpose: 'SIGN_IN' | 'PASSWORD_RESET',
-    challengeToken?: string
+    purpose: 'SIGN_IN' | 'PASSWORD_RESET'
   ): Promise<VerificationDelivery> {
     const subject =
       purpose === 'SIGN_IN'
@@ -55,66 +56,32 @@ export class VerificationDeliveryService {
 
     const mailer = getTransporter();
 
-    if (mailer && email) {
-      try {
-        await mailer.sendMail({
-          from: config.smtp.from,
-          to: email,
-          subject,
-          text: body,
-        });
-        return {
-          channel: 'email',
-          destination: email.replace(/(.{2})(.*)(@.*)/, '$1***$3'),
-          delivered: true,
-        };
-      } catch (error) {
-        // Fall through to the in-app channel rather than blocking sign-in.
-        console.warn('[VerificationDelivery] SMTP delivery failed, using in-app delivery.');
-      }
+    if (!mailer || !email) {
+      throw {
+        statusCode: 503,
+        message:
+          'Email delivery is not configured. Ask your administrator to configure SMTP before signing in.',
+      };
     }
 
-    // In-app fallback: the code is retrievable by the authenticated employee.
-    const { NotificationService } = await import('../modules/notifications/notification.service');
-    await NotificationService.create({
-      userId,
-      title: purpose === 'SIGN_IN' ? 'Your sign-in verification code' : 'Your password reset token',
-      message: body,
-      type: purpose === 'SIGN_IN' ? 'INFO' : 'URGENT',
-      linkUrl: purpose === 'SIGN_IN' ? '/admin/dashboard' : '/login?portal=client',
-    });
-
-    // When SMTP is unavailable the code is also parked against the one-time
-    // challenge token, so the holder of that token can retrieve it directly.
-    // The token is a secret issued only to the person who started the sign-in.
-    if (challengeToken) {
-      store.pendingVerificationCodes.set(challengeToken, {
-        code,
-        expiresAt: new Date(Date.now() + 15 * 60 * 1000),
-        consumed: false,
+    try {
+      await mailer.sendMail({
+        from: config.smtp.from,
+        to: email,
+        subject,
+        text: body,
       });
+      return {
+        channel: 'email',
+        destination: email.replace(/(.{2})(.*)(@.*)/, '$1***$3'),
+        delivered: true,
+      };
+    } catch (error) {
+      console.warn('[VerificationDelivery] SMTP delivery failed.');
+      throw {
+        statusCode: 503,
+        message: 'Email delivery failed. Please try again or contact your administrator.',
+      };
     }
-
-    return {
-      channel: 'in-app',
-      destination: email ? email.replace(/(.{2})(.*)(@.*)/, '$1***$3') : 'your notification inbox',
-      delivered: true,
-    };
-  }
-
-  /**
-   * Retrieves a code that was delivered without a working SMTP channel.
-   * Requires the one-time challenge token and is single-use.
-   */
-  static collectCode(challengeToken: string): string | null {
-    const entry = store.pendingVerificationCodes.get(challengeToken);
-    if (!entry) return null;
-    if (entry.consumed || entry.expiresAt < new Date()) {
-      store.pendingVerificationCodes.delete(challengeToken);
-      return null;
-    }
-    entry.consumed = true;
-    store.pendingVerificationCodes.delete(challengeToken);
-    return entry.code;
   }
 }
