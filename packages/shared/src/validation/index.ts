@@ -10,7 +10,7 @@ import {
 
 export const LoginSchema = z.object({
   identifier: z.string().min(3, 'Username, Employee ID or Passport number is required').trim(),
-  password: z.string().min(1, 'Password or NID number is required'),
+  password: z.string().min(1, 'Password is required'),
   mfaCode: z.string().optional()
 });
 

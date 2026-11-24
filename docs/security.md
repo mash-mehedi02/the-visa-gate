@@ -49,13 +49,13 @@ SUPER_ADMIN  ──> System configuration, DB administration, all admin permissi
     │
   ADMIN      ──> Staff management, clients, applications, workflows, payments, audit logs
     │
-  STAFF      ──> Assigned client cases, step progression, document verification, payments (if permitted)
+  STAFF      ──> Assigned client cases, step progression, document verification, payments (if permitted) — per-case scoping is not yet enforced; see SECURITY_REVIEW.md
     │
   CLIENT     ──> Strictly read-only application tracking, documents status, profile viewing
 ```
 
 ### Granular Staff Permissions
-Admins assign granular permission arrays to Staff profiles:
+Admins assign granular permission arrays to Staff profiles (stored on the profile; route-level enforcement is not yet wired — see SECURITY_REVIEW.md):
 * `clients:view`, `clients:create`, `clients:edit`
 * `applications:view`, `applications:create`, `applications:edit`, `applications:assign`
 * `workflows:manage`, `steps:update`
