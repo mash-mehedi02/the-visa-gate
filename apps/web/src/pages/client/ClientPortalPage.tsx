@@ -240,7 +240,7 @@ export const ClientPortalPage: React.FC = () => {
             role="img"
             aria-label="Skipped"
           >
-            <span className="text-[10px] font-bold">—</span>
+            <span className="text-xs font-bold">—</span>
           </div>
         );
       case StepStatus.ON_HOLD:
@@ -257,7 +257,7 @@ export const ClientPortalPage: React.FC = () => {
       default:
         return (
           <div
-            className="w-8 h-8 rounded-full bg-slate-100 text-slate-400 font-semibold text-xs flex items-center justify-center shrink-0 border border-slate-200"
+            className="w-8 h-8 rounded-full bg-slate-100 text-slate-500 font-semibold text-xs flex items-center justify-center shrink-0 border border-slate-200"
             title="Not Started"
             role="img"
             aria-label="Not Started"
@@ -367,7 +367,7 @@ export const ClientPortalPage: React.FC = () => {
               onClick={() => fileInputRef.current?.click()}
               aria-label="Upload new profile photo"
               title="Upload new profile photo (JPG, PNG, WebP up to 5MB)"
-              className="absolute -bottom-2 -left-2 p-1.5 rounded-full bg-brand-navy text-brand-gold hover:bg-brand-navy-light transition-all border-2 border-white shadow-md focus:outline-none focus:ring-2 focus:ring-brand-gold disabled:opacity-50 min-h-[32px] min-w-[32px] flex items-center justify-center cursor-pointer"
+              className="absolute -bottom-2 -left-2 p-1.5 rounded-full bg-brand-navy text-brand-gold hover:bg-brand-navy-light transition-all border-2 border-white shadow-md focus:outline-none focus:ring-2 focus:ring-brand-gold disabled:opacity-50 min-h-[44px] min-w-[44px] flex items-center justify-center cursor-pointer"
             >
               {uploadingAvatar ? (
                 <RefreshCw className="w-3.5 h-3.5 animate-spin" />
@@ -376,7 +376,7 @@ export const ClientPortalPage: React.FC = () => {
               )}
             </button>
 
-            <span className="absolute -bottom-2 -right-2 px-2 py-0.5 rounded-full bg-emerald-500 text-white text-[10px] font-bold border-2 border-white shadow-xs">
+            <span className="absolute -bottom-2 -right-2 px-2 py-0.5 rounded-full bg-emerald-500 text-white text-xs font-bold border-2 border-white shadow-xs">
               Verified
             </span>
           </div>
@@ -400,36 +400,36 @@ export const ClientPortalPage: React.FC = () => {
                 className="inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-md border border-slate-200 text-xs text-slate-600 hover:bg-slate-50 transition-colors shrink-0 min-h-[44px]"
               >
                 {revealSensitive ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
-                <span>{revealSensitive ? 'Hide identifiers' : 'Show masked IDs'}</span>
+                <span>{revealSensitive ? 'Hide identifiers' : 'Show identifiers'}</span>
               </button>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2 border-t border-slate-100 text-xs">
               <div className="bg-slate-50 p-2.5 rounded-lg border border-slate-100">
-                <span className="text-slate-400 block text-[10px] uppercase font-bold">Passport Number</span>
+                <span className="text-slate-500 block text-xs uppercase font-bold">Passport Number</span>
                 <span className="text-slate-800 font-mono font-bold text-sm break-all">
                   {revealSensitive
-                    ? profile?.passportMasked || user?.identifier
+                    ? profile?.passportMasked || '—'
                     : profile?.passportMasked?.replace(/[A-Z0-9]/g, '•') || '••••••••'}
                 </span>
               </div>
 
               <div className="bg-slate-50 p-2.5 rounded-lg border border-slate-100">
-                <span className="text-slate-400 block text-[10px] uppercase font-bold">National ID (NID)</span>
+                <span className="text-slate-500 block text-xs uppercase font-bold">National ID (NID)</span>
                 <span className="text-slate-800 font-mono font-bold text-sm break-all">
                   {revealSensitive ? profile?.nidMasked || '—' : '••••••••••••'}
                 </span>
               </div>
 
               <div className="bg-slate-50 p-2.5 rounded-lg border border-slate-100">
-                <span className="text-slate-400 block text-[10px] uppercase font-bold">Date of Birth</span>
+                <span className="text-slate-500 block text-xs uppercase font-bold">Date of Birth</span>
                 <span className="text-slate-800 font-medium text-sm">
                   {profile?.dateOfBirth ? new Date(profile.dateOfBirth).toLocaleDateString('en-GB') : 'N/A'}
                 </span>
               </div>
             </div>
 
-            <p className="text-[11px] text-slate-500 leading-relaxed pt-1">
+            <p className="text-xs text-slate-500 leading-relaxed pt-1">
               Your identifiers are stored encrypted and shown masked. Only you and your assigned case officer can see
               this page.
             </p>
@@ -459,7 +459,7 @@ export const ClientPortalPage: React.FC = () => {
                 <span className="whitespace-nowrap">
                   {app.destinationCountry} ({app.visaCategory})
                 </span>
-                <span className="text-[10px] font-mono opacity-80">{app.applicationCode}</span>
+                <span className="text-xs font-mono opacity-80">{app.applicationCode}</span>
               </button>
             ))}
           </div>
@@ -472,7 +472,7 @@ export const ClientPortalPage: React.FC = () => {
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div className="flex items-center gap-3.5 min-w-0">
               <div className="min-w-0">
-                <span className="text-[10px] text-brand-gold uppercase tracking-widest font-bold block">
+                <span className="text-xs text-brand-gold uppercase tracking-widest font-bold block">
                   Active Visa Case • {activeApplication.applicationCode}
                 </span>
                 <h2 className="text-lg sm:text-2xl font-bold font-serif text-white break-words">
@@ -541,7 +541,7 @@ export const ClientPortalPage: React.FC = () => {
 
             <div className="space-y-2 flex-1 min-w-0">
               <div className="flex items-center justify-between flex-wrap gap-2">
-                <span className="text-[11px] font-extrabold uppercase tracking-wider text-brand-navy bg-brand-gold/20 px-2.5 py-0.5 rounded">
+                <span className="text-xs font-extrabold uppercase tracking-wider text-brand-navy bg-brand-gold/20 px-2.5 py-0.5 rounded">
                   Next Required Procedure
                 </span>
                 <span className="text-xs font-bold text-brand-navy bg-white px-3 py-1 rounded-md border border-brand-gold/30 flex items-center gap-1.5 shadow-xs">
@@ -621,7 +621,7 @@ export const ClientPortalPage: React.FC = () => {
                           {step.sortOrder}. {step.stepName}
                         </h3>
                         <span
-                          className={`self-start text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0 ${
+                          className={`self-start text-xs font-bold px-2 py-0.5 rounded-full shrink-0 ${
                             isCompleted
                               ? 'bg-emerald-100 text-emerald-800'
                               : isInProgress
@@ -640,7 +640,7 @@ export const ClientPortalPage: React.FC = () => {
                       </div>
 
                       {/* Dates */}
-                      <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-slate-500 font-mono">
+                      <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-500 font-mono">
                         <span className="flex items-center gap-1">
                           <Calendar className="w-3.5 h-3.5 text-slate-400" />
                           <span>
@@ -661,7 +661,7 @@ export const ClientPortalPage: React.FC = () => {
 
                       {step.instructions && (
                         <div className="mt-2.5 p-2.5 rounded-lg bg-brand-gold/10 border border-brand-gold/25 text-xs text-brand-navy">
-                          <span className="font-bold block text-[10px] uppercase tracking-wider text-brand-gold-dark mb-0.5">
+                          <span className="font-bold block text-xs uppercase tracking-wider text-brand-gold-dark mb-0.5">
                             What you need to do
                           </span>
                           <p className="leading-relaxed">{step.instructions}</p>
@@ -726,7 +726,7 @@ export const ClientPortalPage: React.FC = () => {
                           </span>
                         </td>
                         <td className="py-3 px-4">{getDocStatusBadge(doc.status)}</td>
-                        <td className="py-3 px-4 text-right text-slate-400 font-mono">
+                        <td className="py-3 px-4 text-right text-slate-500 font-mono">
                           {doc.verifiedDate || doc.submittedDate || '—'}
                         </td>
                       </tr>
@@ -748,7 +748,7 @@ export const ClientPortalPage: React.FC = () => {
                     </span>
                     <span className="flex items-center justify-between gap-3 flex-wrap">
                       {getDocStatusBadge(doc.status)}
-                      <span className="text-[10px] text-slate-400 font-mono">
+                      <span className="text-xs text-slate-500 font-mono">
                         {doc.verifiedDate || doc.submittedDate || '—'}
                       </span>
                     </span>
@@ -784,7 +784,7 @@ export const ClientPortalPage: React.FC = () => {
               <Phone className="w-4 h-4" />
             </span>
             <span className="min-w-0">
-              <span className="block text-[10px] font-bold uppercase tracking-wider text-slate-400">Call hotline</span>
+              <span className="block text-xs font-bold uppercase tracking-wider text-slate-500">Call hotline</span>
               <span className="block text-sm font-bold text-brand-navy">{OFFICE.hotline}</span>
             </span>
           </a>
@@ -797,7 +797,7 @@ export const ClientPortalPage: React.FC = () => {
               <Mail className="w-4 h-4" />
             </span>
             <span className="min-w-0">
-              <span className="block text-[10px] font-bold uppercase tracking-wider text-slate-400">Email</span>
+              <span className="block text-xs font-bold uppercase tracking-wider text-slate-500">Email</span>
               <span className="block text-sm font-bold text-brand-navy break-all">{OFFICE.email}</span>
             </span>
           </a>
@@ -807,7 +807,7 @@ export const ClientPortalPage: React.FC = () => {
               <MapPin className="w-4 h-4" />
             </span>
             <span className="min-w-0">
-              <span className="block text-[10px] font-bold uppercase tracking-wider text-slate-400">Visit office</span>
+              <span className="block text-xs font-bold uppercase tracking-wider text-slate-500">Visit office</span>
               <span className="block text-xs font-semibold text-brand-navy leading-snug">
                 {OFFICE.addressLine2}
                 <span className="block font-normal text-slate-500 mt-0.5">{OFFICE.landmark}</span>
@@ -816,7 +816,7 @@ export const ClientPortalPage: React.FC = () => {
           </div>
         </div>
 
-        <p className="text-[11px] text-slate-500 leading-relaxed mt-4 flex items-start gap-2">
+        <p className="text-xs text-slate-500 leading-relaxed mt-4 flex items-start gap-2">
           <ArrowRight className="w-3.5 h-3.5 text-brand-gold-dark shrink-0 mt-0.5" />
           <span>
             When you call, please quote your <strong className="text-brand-navy">Client ID</strong> (

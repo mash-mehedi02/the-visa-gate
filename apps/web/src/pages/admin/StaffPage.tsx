@@ -226,7 +226,7 @@ export const StaffPage: React.FC = () => {
             >
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
-                  <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold bg-brand-navy text-white uppercase tracking-wider">
+                  <span className="px-2.5 py-0.5 rounded-full text-xs font-mono font-bold bg-brand-navy text-white uppercase tracking-wider">
                     {s.employeeId}
                   </span>
                   <div className="flex items-center gap-2">
@@ -236,7 +236,7 @@ export const StaffPage: React.FC = () => {
                       }`}
                       title={s.isActive ? 'Active' : 'Deactivated'}
                     />
-                    <span className="text-[11px] font-semibold text-slate-500">
+                    <span className="text-xs font-semibold text-slate-500">
                       {s.isActive ? 'Active' : 'Inactive'}
                     </span>
                   </div>
@@ -261,15 +261,15 @@ export const StaffPage: React.FC = () => {
                 {/* Metrics */}
                 <div className="grid grid-cols-3 gap-2 pt-2 border-t border-slate-100 text-center text-xs">
                   <div className="p-2 rounded bg-slate-50">
-                    <span className="text-[10px] text-slate-400 uppercase block">Referred</span>
+                    <span className="text-xs text-slate-400 uppercase block">Referred</span>
                     <strong className="text-brand-navy font-bold">{s.referredClientsCount || 0}</strong>
                   </div>
                   <div className="p-2 rounded bg-slate-50">
-                    <span className="text-[10px] text-slate-400 uppercase block">Assigned</span>
+                    <span className="text-xs text-slate-400 uppercase block">Assigned</span>
                     <strong className="text-brand-navy font-bold">{s.assignedClientsCount || 0}</strong>
                   </div>
                   <div className="p-2 rounded bg-slate-50">
-                    <span className="text-[10px] text-slate-400 uppercase block">Active Apps</span>
+                    <span className="text-xs text-slate-400 uppercase block">Active Apps</span>
                     <strong className="text-brand-gold-dark font-bold">{s.assignedApplicationsCount || 0}</strong>
                   </div>
                 </div>
@@ -320,7 +320,7 @@ export const StaffPage: React.FC = () => {
             <div className="table-scroll">
               <table className="w-full text-left border-collapse text-xs min-w-[640px]">
                 <thead>
-                  <tr className="bg-brand-navy text-white text-[11px] font-bold uppercase tracking-wider">
+                  <tr className="bg-brand-navy text-white text-xs font-bold uppercase tracking-wider">
                     <th className="py-3.5 px-6">Staff Member</th>
                     <th className="py-3.5 px-6 text-center">Total Referred</th>
                     <th className="py-3.5 px-6 text-center">Converted Files</th>
@@ -341,7 +341,7 @@ export const StaffPage: React.FC = () => {
                       <tr key={r.staffId} className="hover:bg-slate-50/80 transition-colors">
                         <td className="py-4 px-6">
                           <strong className="block text-brand-navy font-semibold text-sm">{r.staffName}</strong>
-                          <span className="text-[11px] text-slate-400 font-mono">{r.employeeId} • {r.designation}</span>
+                          <span className="text-xs text-slate-400 font-mono">{r.employeeId} • {r.designation}</span>
                         </td>
 
                         <td className="py-4 px-6 text-center font-bold text-sm text-brand-navy">
@@ -372,12 +372,12 @@ export const StaffPage: React.FC = () => {
                           <div className="flex flex-wrap gap-1.5">
                             {Object.entries(r.countryBreakdown).length > 0 ? (
                               Object.entries(r.countryBreakdown).map(([country, count]: any) => (
-                                <span key={country} className="px-2 py-0.5 rounded bg-slate-100 text-[10px] font-medium text-slate-700">
+                                <span key={country} className="px-2 py-0.5 rounded bg-slate-100 text-xs font-medium text-slate-700">
                                   {country}: <strong>{count}</strong>
                                 </span>
                               ))
                             ) : (
-                              <span className="text-slate-400 italic text-[11px]">No applications yet</span>
+                              <span className="text-slate-400 italic text-xs">No applications yet</span>
                             )}
                           </div>
                         </td>
@@ -403,7 +403,7 @@ export const StaffPage: React.FC = () => {
           <div className="bg-white w-full max-w-xl h-full shadow-2xl p-6 sm:p-8 overflow-y-auto space-y-6">
             <div className="flex items-center justify-between border-b border-slate-100 pb-4">
               <div>
-                <span className="text-[11px] font-bold text-brand-gold uppercase tracking-wider block">
+                <span className="text-xs font-bold text-brand-gold uppercase tracking-wider block">
                   Staff Inspector
                 </span>
                 <h3 className="text-xl font-bold text-brand-navy">{inspectStaff.staff.fullName}</h3>
@@ -421,7 +421,7 @@ export const StaffPage: React.FC = () => {
               <div className="space-y-2">
                 <h4 className="text-sm font-bold text-brand-navy flex items-center justify-between">
                   <span>Referred Clients ({inspectStaff.referredClients.length})</span>
-                  <span className="text-[11px] text-brand-gold">Referral Attribution</span>
+                  <span className="text-xs text-brand-gold">Referral Attribution</span>
                 </h4>
                 {inspectStaff.referredClients.length > 0 ? (
                   <div className="space-y-2 max-h-48 overflow-y-auto">
@@ -429,11 +429,11 @@ export const StaffPage: React.FC = () => {
                       <div key={c.id} className="p-3 rounded-lg border border-slate-200 flex items-center justify-between">
                         <div>
                           <strong className="block text-brand-navy">{c.fullName}</strong>
-                          <span className="text-[10px] text-slate-400 font-mono">
+                          <span className="text-xs text-slate-400 font-mono">
                             {c.clientCode} • Source: {c.clientSource} ({c.referralDate || 'N/A'})
                           </span>
                         </div>
-                        <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                        <span className={`px-2 py-0.5 rounded text-xs font-bold ${
                           c.hasCompleted ? 'bg-emerald-100 text-emerald-800' : c.hasConverted ? 'bg-amber-100 text-amber-800' : 'bg-slate-100 text-slate-500'
                         }`}>
                           {c.hasCompleted ? 'Completed' : c.hasConverted ? 'In Progress' : 'No App'}
@@ -457,9 +457,9 @@ export const StaffPage: React.FC = () => {
                       <div key={c.id} className="p-2.5 rounded-lg border border-slate-200 flex items-center justify-between">
                         <div>
                           <strong className="block text-brand-navy">{c.fullName}</strong>
-                          <span className="text-[10px] text-slate-400">{c.phone}</span>
+                          <span className="text-xs text-slate-400">{c.phone}</span>
                         </div>
-                        <span className="text-slate-600 font-mono text-[11px]">{c.clientCode}</span>
+                        <span className="text-slate-600 font-mono text-xs">{c.clientCode}</span>
                       </div>
                     ))}
                   </div>
@@ -479,9 +479,9 @@ export const StaffPage: React.FC = () => {
                       <div key={app.id} className="p-2.5 rounded-lg border border-slate-200 flex items-center justify-between">
                         <div>
                           <strong className="block text-brand-navy font-mono">{app.applicationCode}</strong>
-                          <span className="text-[10px] text-slate-500">{app.clientName} • {app.countryName}</span>
+                          <span className="text-xs text-slate-500">{app.clientName} • {app.countryName}</span>
                         </div>
-                        <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-brand-gold/20 text-brand-navy">
+                        <span className="px-2 py-0.5 rounded text-xs font-bold bg-brand-gold/20 text-brand-navy">
                           {app.status}
                         </span>
                       </div>
@@ -497,9 +497,9 @@ export const StaffPage: React.FC = () => {
                 <h4 className="text-sm font-bold text-brand-navy">Recent Staff Activities</h4>
                 <div className="space-y-1.5 max-h-40 overflow-y-auto">
                   {inspectStaff.activities.map((a: any, i: number) => (
-                    <div key={i} className="p-2 rounded bg-slate-50 border border-slate-200 flex items-center justify-between text-[11px]">
+                    <div key={i} className="p-2 rounded bg-slate-50 border border-slate-200 flex items-center justify-between text-xs">
                       <span className="font-mono text-brand-navy font-semibold">{a.action}</span>
-                      <span className="text-slate-400 text-[10px]">{new Date(a.createdAt).toLocaleString()}</span>
+                      <span className="text-slate-400 text-xs">{new Date(a.createdAt).toLocaleString()}</span>
                     </div>
                   ))}
                 </div>
@@ -526,7 +526,7 @@ export const StaffPage: React.FC = () => {
                 <AlertCircle className="w-4 h-4 text-red-500 shrink-0 mt-0.5" />
                 <div className="space-y-0.5">
                   <p className="font-bold text-xs">Creation Failed</p>
-                  <p className="text-[11px] leading-relaxed text-red-600">{formError}</p>
+                  <p className="text-xs leading-relaxed text-red-600">{formError}</p>
                 </div>
               </div>
             )}
@@ -619,7 +619,7 @@ export const StaffPage: React.FC = () => {
                         onChange={() => togglePermission(val)}
                         className="rounded border-slate-300 text-brand-gold focus:ring-brand-gold"
                       />
-                      <span className="font-mono text-[11px] text-slate-700">{val}</span>
+                      <span className="font-mono text-xs text-slate-700">{val}</span>
                     </label>
                   ))}
                 </div>

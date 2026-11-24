@@ -70,7 +70,7 @@ export const AboutPage: React.FC = () => {
             </div>
 
             <div className="bg-white/5 border border-white/10 rounded-xl p-5">
-              <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3">We are not</h3>
+              <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-3">We are not</h3>
               <ul className="space-y-2 text-sm text-slate-300 leading-relaxed">
                 <li>· A government body, embassy or immigration authority</li>
                 <li>· A visa issuer — approval rests entirely with the destination authority</li>
@@ -133,7 +133,7 @@ export const AboutPage: React.FC = () => {
             <div className="flex items-start gap-3">
               <MapPin className="w-4 h-4 text-brand-gold-dark shrink-0 mt-0.5" />
               <div>
-                <span className="block text-[10px] font-bold uppercase tracking-wider text-slate-400">Office</span>
+                <span className="block text-xs font-bold uppercase tracking-wider text-slate-500">Office</span>
                 <span className="block text-xs text-slate-700 leading-relaxed mt-0.5">
                   {OFFICE.addressLine1}
                   <br />
@@ -147,7 +147,7 @@ export const AboutPage: React.FC = () => {
             <div className="flex items-start gap-3">
               <Phone className="w-4 h-4 text-brand-gold-dark shrink-0 mt-0.5" />
               <div>
-                <span className="block text-[10px] font-bold uppercase tracking-wider text-slate-400">Hotline</span>
+                <span className="block text-xs font-bold uppercase tracking-wider text-slate-500">Hotline</span>
                 <a
                   href={`tel:${OFFICE.hotline.replace(/\s/g, '')}`}
                   className="block text-xs font-bold text-brand-navy mt-0.5 hover:underline"
@@ -161,7 +161,7 @@ export const AboutPage: React.FC = () => {
             <div className="flex items-start gap-3">
               <ShieldCheck className="w-4 h-4 text-brand-gold-dark shrink-0 mt-0.5" />
               <div>
-                <span className="block text-[10px] font-bold uppercase tracking-wider text-slate-400">Opening hours</span>
+                <span className="block text-xs font-bold uppercase tracking-wider text-slate-500">Opening hours</span>
                 <span className="block text-xs text-slate-700 mt-0.5 leading-relaxed">{OFFICE.hours}</span>
                 <span className="block text-xs text-red-600 mt-0.5">{OFFICE.fridayNote}</span>
               </div>

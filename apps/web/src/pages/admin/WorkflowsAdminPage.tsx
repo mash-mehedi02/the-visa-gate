@@ -338,7 +338,7 @@ export const WorkflowsAdminPage: React.FC = () => {
             className="bg-white rounded-xl border border-slate-200/80 p-4 text-center shadow-xs"
           >
             <p className="text-2xl font-bold text-brand-navy">{stat.value}</p>
-            <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider mt-0.5">
+            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mt-0.5">
               {stat.label}
             </p>
           </div>
@@ -358,7 +358,7 @@ export const WorkflowsAdminPage: React.FC = () => {
             <div className="p-5 pb-0">
               <div className="flex items-start justify-between mb-1 gap-2">
                 <div className="flex-1 min-w-0">
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-brand-gold-dark font-mono">
+                  <span className="text-xs font-bold uppercase tracking-wider text-brand-gold-dark font-mono">
                     {t.countryName || 'Global'}{' '}
                     {t.visaCategoryName ? `• ${t.visaCategoryName}` : ''}
                   </span>
@@ -385,10 +385,10 @@ export const WorkflowsAdminPage: React.FC = () => {
               )}
 
               <div className="mt-2 flex items-center gap-2 flex-wrap">
-                <span className="px-2.5 py-1 rounded-lg bg-brand-navy/5 border border-brand-navy/15 text-brand-navy font-bold text-[11px]">
+                <span className="px-2.5 py-1 rounded-lg bg-brand-navy/5 border border-brand-navy/15 text-brand-navy font-bold text-xs">
                   Estimated: {formatDuration(totalDaysOf(t))}
                 </span>
-                <span className="text-[10px] text-slate-400">
+                <span className="text-xs text-slate-400">
                   Sum of all {t.totalSteps || t.steps?.length || 0} step durations
                 </span>
               </div>
@@ -396,7 +396,7 @@ export const WorkflowsAdminPage: React.FC = () => {
 
             {/* Steps List */}
             <div className="px-5">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block mb-1.5">
+              <span className="text-xs font-bold uppercase tracking-wider text-slate-400 block mb-1.5">
                 Sequential Steps:
               </span>
               <div className="space-y-1 max-h-44 overflow-y-auto pr-1">
@@ -412,13 +412,13 @@ export const WorkflowsAdminPage: React.FC = () => {
                       <div className="min-w-0">
                         <p className="font-semibold text-slate-800 break-words">{s.stepName}</p>
                         {s.description && (
-                          <p className="text-[10px] text-slate-500 leading-tight line-clamp-2 mt-0.5">
+                          <p className="text-xs text-slate-500 leading-tight line-clamp-2 mt-0.5">
                             {s.description}
                           </p>
                         )}
                       </div>
                     </div>
-                    <span className="text-[10px] text-slate-400 flex-shrink-0 mt-0.5">~{s.estimatedDays || 7}d</span>
+                    <span className="text-xs text-slate-400 flex-shrink-0 mt-0.5">~{s.estimatedDays || 7}d</span>
                   </div>
                 ))}
               </div>
@@ -593,7 +593,7 @@ export const WorkflowsAdminPage: React.FC = () => {
               <button
                 type="button"
                 onClick={addStep}
-                className="inline-flex items-center gap-1 px-2.5 py-2 rounded-lg border border-brand-navy text-brand-navy font-bold text-[10px] hover:bg-brand-navy/5 min-h-[40px]"
+                className="inline-flex items-center gap-1 px-2.5 py-2 rounded-lg border border-brand-navy text-brand-navy font-bold text-xs hover:bg-brand-navy/5 min-h-[40px]"
               >
                 <Plus className="w-3 h-3" /> Add Step
               </button>
@@ -629,7 +629,7 @@ export const WorkflowsAdminPage: React.FC = () => {
                         title="Estimated days for this step"
                         className="w-14 px-2 py-2 rounded border border-slate-300 text-xs text-center focus:border-brand-gold focus:outline-none"
                       />
-                      <span className="text-[10px] text-slate-400">days</span>
+                      <span className="text-xs text-slate-400">days</span>
                     </div>
                     <div className="flex gap-0.5 shrink-0">
                       <button
@@ -667,7 +667,7 @@ export const WorkflowsAdminPage: React.FC = () => {
                     value={step.description}
                     onChange={(e) => updateStep(idx, 'description', e.target.value)}
                     placeholder="Short client-friendly description of this step"
-                    className="w-full px-2.5 py-2 rounded border border-slate-200 text-[11px] text-slate-600 focus:border-brand-gold focus:outline-none"
+                    className="w-full px-2.5 py-2 rounded border border-slate-200 text-xs text-slate-600 focus:border-brand-gold focus:outline-none"
                   />
                   <input
                     type="text"
@@ -675,7 +675,7 @@ export const WorkflowsAdminPage: React.FC = () => {
                     value={step.clientInstructions}
                     onChange={(e) => updateStep(idx, 'clientInstructions', e.target.value)}
                     placeholder="Client instructions for this step (shown in client portal)"
-                    className="w-full px-2.5 py-2 rounded border border-slate-200 text-[11px] text-slate-600 focus:border-brand-gold focus:outline-none"
+                    className="w-full px-2.5 py-2 rounded border border-slate-200 text-xs text-slate-600 focus:border-brand-gold focus:outline-none"
                   />
                 </div>
               ))}
@@ -689,8 +689,8 @@ export const WorkflowsAdminPage: React.FC = () => {
 
             {form.steps.length > 0 && (
               <div className="mt-2 flex items-center justify-between gap-3 flex-wrap px-3 py-2 rounded-lg bg-brand-navy/5 border border-brand-navy/15">
-                <span className="font-bold text-brand-navy text-[11px]">Total estimated duration</span>
-                <span className="font-bold text-brand-navy text-[11px]">
+                <span className="font-bold text-brand-navy text-xs">Total estimated duration</span>
+                <span className="font-bold text-brand-navy text-xs">
                   {formatDuration(
                     form.steps.reduce((sum, s) => sum + (Number(s.estimatedDays) || 0), 0)
                   )}
@@ -698,7 +698,7 @@ export const WorkflowsAdminPage: React.FC = () => {
               </div>
             )}
 
-            <p className="text-[11px] text-slate-500 leading-relaxed mt-2">
+            <p className="text-xs text-slate-500 leading-relaxed mt-2">
               These durations are internal planning estimates for the steps we handle. They are not guaranteed
               processing times — the destination authority sets the actual timeline.
             </p>
