@@ -28,6 +28,7 @@ import { ApplicationStatus, StepStatus } from '@thevisagate/shared';
 export const ApplicationsPage: React.FC = () => {
   const [applications, setApplications] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [pageError, setPageError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
 
@@ -154,7 +155,7 @@ export const ApplicationsPage: React.FC = () => {
       });
       fetchApplications();
     } catch (err: any) {
-      alert(err.message || 'Failed to create application');
+      setPageError(err.message || 'Failed to create application');
     }
   };
 
@@ -179,7 +180,7 @@ export const ApplicationsPage: React.FC = () => {
       }
       fetchApplications();
     } catch (err: any) {
-      alert(err.message || 'Failed to update step status');
+      setPageError(err.message || 'Failed to update step status');
     }
   };
 
@@ -219,7 +220,7 @@ export const ApplicationsPage: React.FC = () => {
       }
       fetchApplications();
     } catch (err: any) {
-      alert(err.message || 'Failed to save step changes');
+      setPageError(err.message || 'Failed to save step changes');
     }
   };
 
@@ -232,7 +233,7 @@ export const ApplicationsPage: React.FC = () => {
       }
       fetchApplications();
     } catch (err: any) {
-      alert(err.message || 'Failed to delete step');
+      setPageError(err.message || 'Failed to delete step');
     }
   };
 
@@ -252,7 +253,7 @@ export const ApplicationsPage: React.FC = () => {
       await api.post(`/workflows/applications/${selectedCase.id}/steps/reorder`, { stepIds: orderedIds });
       inspectCase(selectedCase.id);
     } catch (err: any) {
-      alert(err.message || 'Failed to reorder steps');
+      setPageError(err.message || 'Failed to reorder steps');
     }
   };
 
@@ -284,7 +285,7 @@ export const ApplicationsPage: React.FC = () => {
       });
       inspectCase(selectedCase.id);
     } catch (err: any) {
-      alert(err.message || 'Failed to add step');
+      setPageError(err.message || 'Failed to add step');
     }
   };
 
@@ -309,6 +310,24 @@ export const ApplicationsPage: React.FC = () => {
           <span>New Application Case</span>
         </button>
       </div>
+
+      {pageError && (
+        <div
+          role="alert"
+          className="p-3.5 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs flex items-start gap-2.5"
+        >
+          <AlertCircle className="w-4 h-4 text-red-500 shrink-0 mt-0.5" />
+          <span>{pageError}</span>
+          <button
+            type="button"
+            onClick={() => setPageError(null)}
+            aria-label="Dismiss error"
+            className="ml-auto text-red-500 hover:text-red-700 font-bold min-h-[44px] min-w-[44px] flex items-center justify-center"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+      )}
 
       {/* Filter / Search Bar */}
       <div className="bg-white rounded-xl border border-slate-200/80 p-4 shadow-xs grid grid-cols-1 sm:grid-cols-12 gap-3">
@@ -367,11 +386,11 @@ export const ApplicationsPage: React.FC = () => {
                     </td>
                     <td className="py-3.5 px-6 font-semibold text-slate-800">
                       {app.clientName}
-                      <span className="block text-[10px] text-slate-400 font-mono">{app.clientPassportMasked}</span>
+                      <span className="block text-xs text-slate-400 font-mono">{app.clientPassportMasked}</span>
                     </td>
                     <td className="py-3.5 px-6">
                       <span className="font-semibold text-brand-navy block">{app.countryName}</span>
-                      <span className="text-[11px] text-slate-500">{app.visaCategoryName}</span>
+                      <span className="text-xs text-slate-500">{app.visaCategoryName}</span>
                     </td>
                     <td className="py-3.5 px-6 font-medium text-slate-700">
                       {app.currentStep}
@@ -382,7 +401,7 @@ export const ApplicationsPage: React.FC = () => {
                       </span>
                     </td>
                     <td className="py-3.5 px-6">
-                      <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800 uppercase tracking-wider">
+                      <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-100 text-amber-800 uppercase tracking-wider">
                         {app.status}
                       </span>
                     </td>
@@ -619,7 +638,7 @@ export const ApplicationsPage: React.FC = () => {
                   <span className="font-mono font-bold text-base text-brand-navy">
                     {selectedCase.applicationCode}
                   </span>
-                  <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800 uppercase">
+                  <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-100 text-amber-800 uppercase">
                     {selectedCase.status}
                   </span>
                   <span className="text-xs text-slate-400 font-mono">
@@ -683,7 +702,7 @@ export const ApplicationsPage: React.FC = () => {
                         >
                           <ArrowUp className="w-3.5 h-3.5" />
                         </button>
-                        <span className="w-6 h-6 rounded-full bg-brand-navy text-brand-gold font-bold flex items-center justify-center text-[10px] shadow-xs">
+                        <span className="w-6 h-6 rounded-full bg-brand-navy text-brand-gold font-bold flex items-center justify-center text-xs shadow-xs">
                           {step.sortOrder}
                         </span>
                         <button
@@ -712,7 +731,7 @@ export const ApplicationsPage: React.FC = () => {
                         </div>
 
                         {/* Scheduled Date & Deadline */}
-                        <div className="flex items-center gap-3 text-[11px] text-slate-500 font-mono">
+                        <div className="flex items-center gap-3 text-xs text-slate-500 font-mono">
                           <span>
                             📅 Scheduled:{' '}
                             {step.scheduledDate ? (
@@ -731,16 +750,16 @@ export const ApplicationsPage: React.FC = () => {
 
                         {/* Client Instructions */}
                         {step.clientInstructions && (
-                          <div className="text-[11px] text-brand-navy bg-brand-gold/10 p-2 rounded-lg border border-brand-gold/30">
-                            <span className="font-bold text-[10px] uppercase text-brand-gold-dark block">Client Notice:</span>
+                          <div className="text-xs text-brand-navy bg-brand-gold/10 p-2 rounded-lg border border-brand-gold/30">
+                            <span className="font-bold text-xs uppercase text-brand-gold-dark block">Client Notice:</span>
                             {step.clientInstructions}
                           </div>
                         )}
 
                         {/* Internal Notes */}
                         {step.internalNotes && (
-                          <div className="text-[11px] text-slate-600 bg-white p-2 rounded-lg border border-slate-200">
-                            <span className="font-bold text-[10px] uppercase text-slate-400 block">Internal Staff Note:</span>
+                          <div className="text-xs text-slate-600 bg-white p-2 rounded-lg border border-slate-200">
+                            <span className="font-bold text-xs uppercase text-slate-400 block">Internal Staff Note:</span>
                             {step.internalNotes}
                           </div>
                         )}

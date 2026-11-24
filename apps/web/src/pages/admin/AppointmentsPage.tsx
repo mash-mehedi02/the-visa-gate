@@ -288,7 +288,7 @@ export const AppointmentsPage: React.FC = () => {
             <div className="table-scroll">
               <table className="w-full text-left border-collapse text-xs min-w-[720px]">
                 <thead>
-                  <tr className="bg-brand-navy text-white text-[11px] font-bold uppercase tracking-wider">
+                  <tr className="bg-brand-navy text-white text-xs font-bold uppercase tracking-wider">
                     <th className="py-3.5 px-6">Booking Reference</th>
                     <th className="py-3.5 px-6">Applicant Contact</th>
                     <th className="py-3.5 px-6">Pathway Requested</th>
@@ -310,20 +310,20 @@ export const AppointmentsPage: React.FC = () => {
                       <tr key={b.id} className="hover:bg-slate-50/80 transition-colors">
                         <td className="py-3.5 px-6 font-mono font-bold text-brand-navy">
                           {b.bookingCode}
-                          <span className="text-[10px] text-slate-400 block font-normal">
+                          <span className="text-xs text-slate-400 block font-normal">
                             {new Date(b.createdAt).toLocaleDateString()}
                           </span>
                         </td>
 
                         <td className="py-3.5 px-6">
                           <strong className="block text-brand-navy font-semibold">{b.fullName}</strong>
-                          <span className="text-[11px] text-slate-500 block">{b.phone}</span>
-                          <span className="text-[10px] text-slate-400 block">{b.email}</span>
+                          <span className="text-xs text-slate-500 block">{b.phone}</span>
+                          <span className="text-xs text-slate-400 block">{b.email}</span>
                         </td>
 
                         <td className="py-3.5 px-6">
                           <span className="font-semibold text-brand-navy block">{b.countryName}</span>
-                          <span className="text-[11px] text-brand-gold-dark block">{b.programName}</span>
+                          <span className="text-xs text-brand-gold-dark block">{b.programName}</span>
                         </td>
 
                         <td className="py-3.5 px-6">
@@ -331,7 +331,7 @@ export const AppointmentsPage: React.FC = () => {
                             <CalendarIcon className="w-3.5 h-3.5 text-brand-gold" />
                             <span>{b.rescheduledDate || b.preferredDate}</span>
                           </div>
-                          <span className="text-[11px] text-slate-500 font-mono mt-0.5 block">
+                          <span className="text-xs text-slate-500 font-mono mt-0.5 block">
                             {b.rescheduledTime || b.preferredTime}
                           </span>
                         </td>
@@ -347,7 +347,7 @@ export const AppointmentsPage: React.FC = () => {
                         </td>
 
                         <td className="py-3.5 px-6">
-                          <span className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold border uppercase tracking-wider ${getStatusBadge(b.status)}`}>
+                          <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-bold border uppercase tracking-wider ${getStatusBadge(b.status)}`}>
                             {b.status}
                           </span>
                         </td>
@@ -428,7 +428,7 @@ export const AppointmentsPage: React.FC = () => {
                   <div key={date} className="p-4 rounded-xl border border-slate-200 bg-slate-50/60 space-y-2.5">
                     <div className="flex items-center justify-between border-b border-slate-200 pb-2">
                       <strong className="text-xs font-bold text-brand-navy font-mono">{date}</strong>
-                      <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-brand-gold/20 text-brand-navy">
+                      <span className="text-xs font-bold px-2 py-0.5 rounded bg-brand-gold/20 text-brand-navy">
                         {appts.length} Booking{appts.length !== 1 ? 's' : ''}
                       </span>
                     </div>
@@ -441,7 +441,7 @@ export const AppointmentsPage: React.FC = () => {
                           className="p-2 rounded-lg bg-white border border-slate-200 text-xs space-y-0.5 cursor-pointer hover:border-brand-gold transition-colors"
                         >
                           <div className="flex items-center justify-between">
-                            <span className="font-mono font-bold text-[11px] text-brand-gold-dark">
+                            <span className="font-mono font-bold text-xs text-brand-gold-dark">
                               {a.rescheduledTime || a.preferredTime}
                             </span>
                             <span className={`text-[9px] font-bold px-1.5 py-0.2 rounded uppercase ${getStatusBadge(a.status)}`}>
@@ -449,7 +449,7 @@ export const AppointmentsPage: React.FC = () => {
                             </span>
                           </div>
                           <strong className="block text-brand-navy truncate">{a.fullName}</strong>
-                          <span className="text-[10px] text-slate-400 block truncate">{a.countryName} • {a.programName}</span>
+                          <span className="text-xs text-slate-400 block truncate">{a.countryName} • {a.programName}</span>
                         </div>
                       ))}
                     </div>
@@ -568,11 +568,11 @@ export const AppointmentsPage: React.FC = () => {
           <div className="bg-white w-full max-w-lg h-full shadow-2xl p-6 sm:p-8 overflow-y-auto space-y-6">
             <div className="flex items-center justify-between border-b border-slate-100 pb-4">
               <div>
-                <span className="text-[10px] font-mono font-bold text-brand-gold uppercase">
+                <span className="text-xs font-mono font-bold text-brand-gold uppercase">
                   {selectedBooking.bookingCode}
                 </span>
                 <h3 className="text-xl font-bold text-brand-navy">{selectedBooking.fullName}</h3>
-                <span className={`inline-block mt-1 px-2 py-0.5 rounded text-[10px] font-bold border uppercase ${getStatusBadge(selectedBooking.status)}`}>
+                <span className={`inline-block mt-1 px-2 py-0.5 rounded text-xs font-bold border uppercase ${getStatusBadge(selectedBooking.status)}`}>
                   {selectedBooking.status}
                 </span>
               </div>

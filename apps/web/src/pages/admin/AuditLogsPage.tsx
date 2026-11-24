@@ -55,7 +55,7 @@ export const AuditLogsPage: React.FC = () => {
                 <th className="py-3 px-6 text-right">IP Address</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100 font-mono text-[11px]">
+            <tbody className="divide-y divide-slate-100 font-mono text-xs">
               {loading ? (
                 <tr>
                   <td colSpan={6} className="py-12 text-center text-slate-400 font-sans">
@@ -73,7 +73,7 @@ export const AuditLogsPage: React.FC = () => {
                       <span className="block text-[9px] text-slate-400 font-normal">{log.userRole}</span>
                     </td>
                     <td className="py-3 px-6">
-                      <span className="px-2 py-0.5 rounded bg-brand-navy text-brand-gold font-bold text-[10px]">
+                      <span className="px-2 py-0.5 rounded bg-brand-navy text-brand-gold font-bold text-xs">
                         {log.action}
                       </span>
                     </td>
