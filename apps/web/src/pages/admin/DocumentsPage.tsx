@@ -310,23 +310,23 @@ export const DocumentsPage: React.FC = () => {
       {/* Summary KPI Cards */}
       <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
         <div className="bg-white rounded-xl border border-slate-200/80 p-3.5 shadow-xs">
-          <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Total in Case</p>
+          <p className="text-xs font-bold uppercase tracking-wider text-slate-400">Total in Case</p>
           <p className="text-xl font-bold text-brand-navy mt-1">{totalCount}</p>
         </div>
         <div className="bg-white rounded-xl border border-emerald-200/80 p-3.5 shadow-xs bg-emerald-50/20">
-          <p className="text-[10px] font-bold uppercase tracking-wider text-emerald-700">Verified</p>
+          <p className="text-xs font-bold uppercase tracking-wider text-emerald-700">Verified</p>
           <p className="text-xl font-bold text-emerald-800 mt-1">{verifiedCount}</p>
         </div>
         <div className="bg-white rounded-xl border border-amber-200/80 p-3.5 shadow-xs bg-amber-50/20">
-          <p className="text-[10px] font-bold uppercase tracking-wider text-amber-700">Under Review</p>
+          <p className="text-xs font-bold uppercase tracking-wider text-amber-700">Under Review</p>
           <p className="text-xl font-bold text-amber-800 mt-1">{reviewCount}</p>
         </div>
         <div className="bg-white rounded-xl border border-orange-200/80 p-3.5 shadow-xs bg-orange-50/20">
-          <p className="text-[10px] font-bold uppercase tracking-wider text-orange-700">Correction Req.</p>
+          <p className="text-xs font-bold uppercase tracking-wider text-orange-700">Correction Req.</p>
           <p className="text-xl font-bold text-orange-800 mt-1">{correctionCount}</p>
         </div>
         <div className="bg-white rounded-xl border border-rose-200/80 p-3.5 shadow-xs bg-rose-50/20">
-          <p className="text-[10px] font-bold uppercase tracking-wider text-rose-700">Rejected</p>
+          <p className="text-xs font-bold uppercase tracking-wider text-rose-700">Rejected</p>
           <p className="text-xl font-bold text-rose-800 mt-1">{rejectedCount}</p>
         </div>
       </div>
@@ -354,7 +354,7 @@ export const DocumentsPage: React.FC = () => {
             <div className="text-xs bg-slate-50 px-3 py-2 rounded-lg border border-slate-200 text-slate-600 flex items-center gap-2">
               <span>Client:</span>
               <strong className="text-brand-navy">{currentApp.clientName}</strong>
-              <span className="text-slate-400 font-mono text-[11px]">({currentApp.clientCode})</span>
+              <span className="text-slate-400 font-mono text-xs">({currentApp.clientCode})</span>
               <span className="text-slate-300">|</span>
               <span>Country: <strong className="text-slate-800">{currentApp.countryName}</strong></span>
             </div>
@@ -375,12 +375,12 @@ export const DocumentsPage: React.FC = () => {
           </div>
 
           <div className="flex items-center gap-2 w-full sm:w-auto overflow-x-auto pb-1 sm:pb-0">
-            <span className="text-[11px] font-bold text-slate-500 whitespace-nowrap">Status:</span>
+            <span className="text-xs font-bold text-slate-500 whitespace-nowrap">Status:</span>
             {['ALL', DocumentStatus.VERIFIED, DocumentStatus.UNDER_REVIEW, DocumentStatus.RECEIVED, DocumentStatus.CORRECTION_REQUIRED, DocumentStatus.REJECTED].map((st) => (
               <button
                 key={st}
                 onClick={() => setStatusFilter(st)}
-                className={`px-2.5 py-1 rounded text-[11px] font-semibold whitespace-nowrap transition-colors ${
+                className={`px-2.5 py-1 rounded text-xs font-semibold whitespace-nowrap transition-colors ${
                   statusFilter === st
                     ? 'bg-brand-navy text-brand-gold'
                     : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
@@ -426,7 +426,7 @@ export const DocumentsPage: React.FC = () => {
                         <div>
                           <span>{doc.documentTypeName}</span>
                           {doc.replacedAt && (
-                            <span className="block text-[10px] text-purple-600 font-semibold font-mono">
+                            <span className="block text-xs text-purple-600 font-semibold font-mono">
                               Replaced on {new Date(doc.replacedAt).toLocaleDateString()}
                             </span>
                           )}
@@ -437,10 +437,10 @@ export const DocumentsPage: React.FC = () => {
                     {/* File info */}
                     <td className="py-3.5 px-4">
                       <div className="space-y-0.5">
-                        <span className="font-mono text-[11px] text-slate-700 font-semibold block truncate max-w-xs">
+                        <span className="font-mono text-xs text-slate-700 font-semibold block truncate max-w-xs">
                           {doc.originalName}
                         </span>
-                        <div className="flex items-center gap-2 text-[10px] text-slate-400 font-mono">
+                        <div className="flex items-center gap-2 text-xs text-slate-400 font-mono">
                           <span>{formatFileSize(doc.fileSize)}</span>
                           <span>•</span>
                           <span>{doc.mimeType?.split('/')[1]?.toUpperCase() || 'FILE'}</span>
@@ -458,17 +458,17 @@ export const DocumentsPage: React.FC = () => {
                     {/* Notes */}
                     <td className="py-3.5 px-4 max-w-xs">
                       {doc.verificationNotes && (
-                        <div className="text-slate-600 truncate text-[11px]">
+                        <div className="text-slate-600 truncate text-xs">
                           <strong className="text-slate-700">Remarks:</strong> {doc.verificationNotes}
                         </div>
                       )}
                       {doc.internalNotes && (
-                        <div className="text-amber-800 bg-amber-50 rounded px-1.5 py-0.5 mt-0.5 inline-block text-[10px] font-medium border border-amber-200/50">
+                        <div className="text-amber-800 bg-amber-50 rounded px-1.5 py-0.5 mt-0.5 inline-block text-xs font-medium border border-amber-200/50">
                           <strong>Staff Note:</strong> {doc.internalNotes}
                         </div>
                       )}
                       {!doc.verificationNotes && !doc.internalNotes && (
-                        <span className="text-slate-400 italic text-[11px]">—</span>
+                        <span className="text-slate-400 italic text-xs">—</span>
                       )}
                     </td>
 
@@ -514,7 +514,7 @@ export const DocumentsPage: React.FC = () => {
                             setVerificationNotes(doc.verificationNotes || '');
                             setInternalNotes(doc.internalNotes || '');
                           }}
-                          className="px-2.5 py-1 rounded-lg bg-brand-navy text-white text-[11px] font-bold hover:bg-brand-navy-light"
+                          className="px-2.5 py-1 rounded-lg bg-brand-navy text-white text-xs font-bold hover:bg-brand-navy-light"
                         >
                           Verify
                         </button>
@@ -553,7 +553,7 @@ export const DocumentsPage: React.FC = () => {
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <div>
                 <h3 className="text-base font-bold text-brand-navy font-serif">Upload Document to Vault</h3>
-                <p className="text-[11px] text-slate-500">Stored in encrypted private storage with security scan.</p>
+                <p className="text-xs text-slate-500">Stored in encrypted private storage with security scan.</p>
               </div>
               <button onClick={() => setUploadModal(false)} className="text-slate-400 hover:text-slate-600">
                 <X className="w-4 h-4" />
@@ -692,7 +692,7 @@ export const DocumentsPage: React.FC = () => {
                 <h3 className="text-base font-bold text-brand-navy font-serif">
                   Compliance Check: {editingDoc.documentTypeName}
                 </h3>
-                <p className="text-[11px] text-slate-500 font-mono">{editingDoc.originalName}</p>
+                <p className="text-xs text-slate-500 font-mono">{editingDoc.originalName}</p>
               </div>
               <button onClick={() => setEditingDoc(null)} className="text-slate-400 hover:text-slate-600">
                 <X className="w-4 h-4" />
@@ -710,7 +710,7 @@ export const DocumentsPage: React.FC = () => {
                       setEditStatus(DocumentStatus.VERIFIED);
                       if (!verificationNotes) setVerificationNotes('Approved: Document meets all high commission requirements.');
                     }}
-                    className={`p-2 rounded-lg text-center font-bold text-[11px] border transition-all ${
+                    className={`p-2 rounded-lg text-center font-bold text-xs border transition-all ${
                       editStatus === DocumentStatus.VERIFIED
                         ? 'bg-emerald-600 text-white border-emerald-600'
                         : 'border-emerald-200 text-emerald-800 bg-emerald-50 hover:bg-emerald-100'
@@ -724,7 +724,7 @@ export const DocumentsPage: React.FC = () => {
                       setEditStatus(DocumentStatus.CORRECTION_REQUIRED);
                       if (!verificationNotes) setVerificationNotes('Correction needed: Please submit a clearer scan or updated copy.');
                     }}
-                    className={`p-2 rounded-lg text-center font-bold text-[11px] border transition-all ${
+                    className={`p-2 rounded-lg text-center font-bold text-xs border transition-all ${
                       editStatus === DocumentStatus.CORRECTION_REQUIRED
                         ? 'bg-orange-600 text-white border-orange-600'
                         : 'border-orange-200 text-orange-800 bg-orange-50 hover:bg-orange-100'
@@ -738,7 +738,7 @@ export const DocumentsPage: React.FC = () => {
                       setEditStatus(DocumentStatus.REJECTED);
                       if (!verificationNotes) setVerificationNotes('Rejected: Document failed verification criteria or is invalid.');
                     }}
-                    className={`p-2 rounded-lg text-center font-bold text-[11px] border transition-all ${
+                    className={`p-2 rounded-lg text-center font-bold text-xs border transition-all ${
                       editStatus === DocumentStatus.REJECTED
                         ? 'bg-rose-600 text-white border-rose-600'
                         : 'border-rose-200 text-rose-800 bg-rose-50 hover:bg-rose-100'
@@ -820,7 +820,7 @@ export const DocumentsPage: React.FC = () => {
                 <h3 className="text-base font-bold text-brand-navy font-serif">
                   Replace File: {replaceDoc.documentTypeName}
                 </h3>
-                <p className="text-[11px] text-slate-500 font-mono">Current: {replaceDoc.originalName}</p>
+                <p className="text-xs text-slate-500 font-mono">Current: {replaceDoc.originalName}</p>
               </div>
               <button onClick={() => setReplaceDoc(null)} className="text-slate-400 hover:text-slate-600">
                 <X className="w-4 h-4" />
@@ -828,7 +828,7 @@ export const DocumentsPage: React.FC = () => {
             </div>
 
             <form onSubmit={handleReplaceSubmit} className="space-y-4 text-xs">
-              <div className="p-3 bg-purple-50 rounded-lg border border-purple-200 text-purple-900 text-[11px]">
+              <div className="p-3 bg-purple-50 rounded-lg border border-purple-200 text-purple-900 text-xs">
                 Replacing this file will update the physical vault storage and set the document status to <strong>RESUBMITTED</strong>.
               </div>
 
@@ -905,7 +905,7 @@ export const DocumentsPage: React.FC = () => {
                   type="text"
                   readOnly
                   value={signedLinkModal.url}
-                  className="w-full bg-transparent font-mono text-[11px] text-slate-700 outline-none select-all"
+                  className="w-full bg-transparent font-mono text-xs text-slate-700 outline-none select-all"
                 />
                 <button
                   onClick={() => {
@@ -920,7 +920,7 @@ export const DocumentsPage: React.FC = () => {
                 </button>
               </div>
 
-              <div className="flex items-center justify-between text-[11px] text-slate-500 pt-1">
+              <div className="flex items-center justify-between text-xs text-slate-500 pt-1">
                 <span>Expires at: {new Date(signedLinkModal.expiresAt).toLocaleTimeString()}</span>
                 <a
                   href={signedLinkModal.url}

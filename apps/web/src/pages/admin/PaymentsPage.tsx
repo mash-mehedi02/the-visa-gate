@@ -11,10 +11,15 @@ import {
   X,
   Receipt
 } from 'lucide-react';
-import { PaymentMethod, PaymentStatus } from '@thevisagate/shared';
+import { PaymentMethod, PaymentStatus, RoleName } from '@thevisagate/shared';
+import { useAuth } from '../../context/AuthContext';
 
 export const PaymentsPage: React.FC = () => {
+  const { user } = useAuth();
+  // Payment reversal is admin-only on the server too; staff must not even see the button.
+  const isAdmin = user?.role === RoleName.ADMIN || user?.role === RoleName.SUPER_ADMIN;
   const [payments, setPayments] = useState<any[]>([]);
+  const [pageError, setPageError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [recordModal, setRecordModal] = useState(false);
   const [reverseModal, setReverseModal] = useState<any>(null);
@@ -80,7 +85,7 @@ export const PaymentsPage: React.FC = () => {
       });
       fetchPayments();
     } catch (err: any) {
-      alert(err.message || 'Failed to record payment');
+      setPageError(err.message || 'Failed to record payment');
     }
   };
 
@@ -96,7 +101,7 @@ export const PaymentsPage: React.FC = () => {
       setReversalReason('');
       fetchPayments();
     } catch (err: any) {
-      alert(err.message || 'Failed to reverse payment');
+      setPageError(err.message || 'Failed to reverse payment');
     }
   };
 
@@ -118,6 +123,24 @@ export const PaymentsPage: React.FC = () => {
           <span>Record New Payment</span>
         </button>
       </div>
+
+      {pageError && (
+        <div
+          role="alert"
+          className="p-3.5 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs flex items-start gap-2.5"
+        >
+          <AlertCircle className="w-4 h-4 text-red-500 shrink-0 mt-0.5" />
+          <span>{pageError}</span>
+          <button
+            type="button"
+            onClick={() => setPageError(null)}
+            aria-label="Dismiss error"
+            className="ml-auto text-red-500 hover:text-red-700 font-bold min-h-[44px] min-w-[44px] flex items-center justify-center"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+      )}
 
       {/* Ledger Table */}
       <div className="bg-white rounded-xl border border-slate-200/80 shadow-xs overflow-hidden">
@@ -162,7 +185,7 @@ export const PaymentsPage: React.FC = () => {
                     </td>
                     <td className="py-3.5 px-6">
                       <span
-                        className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
+                        className={`px-2.5 py-0.5 rounded-full text-xs font-bold uppercase tracking-wider ${
                           p.status === PaymentStatus.RECEIVED
                             ? 'bg-emerald-100 text-emerald-800'
                             : 'bg-rose-100 text-rose-800'
@@ -180,7 +203,7 @@ export const PaymentsPage: React.FC = () => {
                         <span>Receipt</span>
                       </button>
 
-                      {p.status === PaymentStatus.RECEIVED && (
+                      {p.status === PaymentStatus.RECEIVED && isAdmin && (
                         <button
                           onClick={() => setReverseModal(p)}
                           className="px-2.5 py-1 rounded bg-rose-50 hover:bg-rose-100 text-rose-700 font-semibold text-xs inline-flex items-center gap-1"
@@ -336,7 +359,7 @@ export const PaymentsPage: React.FC = () => {
                 <span className="font-bold text-brand-navy block">
                   {receiptModal.receiptNumber}
                 </span>
-                <span className="text-slate-400 text-[10px]">
+                <span className="text-slate-400 text-xs">
                   Date: {receiptModal.paymentDate}
                 </span>
               </div>
@@ -367,7 +390,7 @@ export const PaymentsPage: React.FC = () => {
               </div>
             </div>
 
-            <div className="bg-slate-50 p-3 rounded-lg text-[10px] text-slate-500 text-center">
+            <div className="bg-slate-50 p-3 rounded-lg text-xs text-slate-500 text-center">
               This receipt is officially registered in The Visa Gate audit ledger. System generated document.
             </div>
 
