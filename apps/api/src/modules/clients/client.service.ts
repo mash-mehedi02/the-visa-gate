@@ -464,19 +464,30 @@ export class ClientService {
     const userIndex = store.users.findIndex((u) => u.id === client.userId);
     if (userIndex !== -1) {
       store.users.splice(userIndex, 1);
+      store.deleteRecordFromFirebase('tvg_users', client.userId);
     }
 
     // Remove associated applications and steps
     const appIds = store.applications.filter((a) => a.clientId === clientId).map((a) => a.id);
+    const removedSteps = store.applicationSteps.filter((s) => appIds.includes(s.applicationId));
+    const removedDocs = store.documents.filter((d) => d.clientId === clientId);
+    const removedPayments = store.payments.filter((p) => p.clientId === clientId);
+
     store.applications = store.applications.filter((a) => a.clientId !== clientId);
     store.applicationSteps = store.applicationSteps.filter((s) => !appIds.includes(s.applicationId));
     store.documents = store.documents.filter((d) => d.clientId !== clientId);
     store.payments = store.payments.filter((p) => p.clientId !== clientId);
 
+    for (const id of appIds) store.deleteRecordFromFirebase('tvg_applications', id);
+    for (const s of removedSteps) store.deleteRecordFromFirebase('tvg_application_steps', s.id);
+    for (const d of removedDocs) store.deleteRecordFromFirebase('tvg_documents', d.id);
+    for (const p of removedPayments) store.deleteRecordFromFirebase('tvg_payments', p.id);
+
     // Remove client
     store.clients.splice(clientIndex, 1);
+    store.deleteRecordFromFirebase('tvg_clients', clientId);
 
-    // Persist to disk
+    // Persist to disk & Firebase
     store.saveToDisk();
 
     // Audit log

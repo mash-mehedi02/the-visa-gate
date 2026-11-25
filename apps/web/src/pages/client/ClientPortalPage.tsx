@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback, useRef } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { api } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
 import {
@@ -16,9 +16,7 @@ import {
   Phone,
   Mail,
   MapPin,
-  FileQuestion,
-  Camera,
-  Upload
+  FileQuestion
 } from 'lucide-react';
 import { StepStatus, DocumentStatus } from '@thevisagate/shared';
 import { OFFICE } from '../../components/common/ContactStrip';
@@ -35,41 +33,6 @@ export const ClientPortalPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [revealSensitive, setRevealSensitive] = useState(false);
-  const [uploadingAvatar, setUploadingAvatar] = useState(false);
-  const [avatarSuccess, setAvatarSuccess] = useState<string | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-
-  const handleAvatarSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    if (!file.type.startsWith('image/')) {
-      setError('Please select a valid image file (JPG, PNG, or WebP).');
-      return;
-    }
-    if (file.size > 5 * 1024 * 1024) {
-      setError('Image must be under 5MB.');
-      return;
-    }
-
-    try {
-      setUploadingAvatar(true);
-      setError(null);
-      const fd = new FormData();
-      fd.append('avatar', file);
-      const res: any = await api.post('/client/avatar', fd);
-      if (res.data?.avatarUrl) {
-        setProfile((prev: any) => ({ ...prev, avatarUrl: res.data.avatarUrl }));
-        setAvatarSuccess('Profile photo updated successfully!');
-        setTimeout(() => setAvatarSuccess(null), 4000);
-      }
-    } catch (err: any) {
-      setError(err?.message || 'Failed to upload profile photo. Please try again.');
-    } finally {
-      setUploadingAvatar(false);
-      if (fileInputRef.current) fileInputRef.current.value = '';
-    }
-  };
 
   const fetchClientData = useCallback(async () => {
     try {
@@ -284,7 +247,7 @@ export const ClientPortalPage: React.FC = () => {
       <div className="py-12 text-center space-y-4" role="alert">
         <AlertCircle className="w-12 h-12 text-red-400 mx-auto" />
         <div className="space-y-1.5">
-          <h1 className="text-lg font-bold text-brand-navy font-serif">We could not load your case</h1>
+          <h1 className="text-lg font-bold text-brand-navy tracking-tight">We could not load your case</h1>
           <p className="text-sm text-slate-600 max-w-md mx-auto leading-relaxed">{error}</p>
         </div>
         <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
@@ -311,12 +274,12 @@ export const ClientPortalPage: React.FC = () => {
   const activeApplication = applications.find((a) => a.id === selectedAppId);
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-4 font-sans">
       {/* Inline error banner for refresh failures (profile still loaded) */}
       {error && (
         <div
           role="alert"
-          className="p-3.5 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs flex items-start gap-2.5"
+          className="p-3 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs flex items-start gap-2.5"
         >
           <AlertCircle className="w-4 h-4 shrink-0 text-red-500 mt-0.5" />
           <span className="grow">{error}</span>
@@ -330,500 +293,410 @@ export const ClientPortalPage: React.FC = () => {
         </div>
       )}
 
-      {/* 1. Client Identity & Profile Card */}
-      <section className="bg-white rounded-2xl border border-slate-200/80 p-5 sm:p-8 shadow-xs">
-        {avatarSuccess && (
-          <div className="mb-4 p-3 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs flex items-center gap-2">
-            <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-            <span>{avatarSuccess}</span>
-          </div>
-        )}
-        <div className="flex flex-col sm:flex-row items-center sm:items-start gap-5 sm:gap-6">
-          {/* Avatar with Upload Option */}
-          <div className="relative shrink-0 group">
-            {profile?.avatarUrl ? (
-              <img
-                src={profile.avatarUrl}
-                alt={profile.fullName}
-                className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl object-cover border-2 border-brand-gold/40 shadow-sm"
-              />
-            ) : (
-              <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl bg-brand-navy text-brand-gold font-bold text-3xl font-serif flex items-center justify-center shadow-sm">
-                {profile?.fullName?.[0] || 'C'}
-              </div>
-            )}
-
-            <input
-              type="file"
-              ref={fileInputRef}
-              accept="image/jpeg,image/png,image/webp"
-              className="hidden"
-              onChange={handleAvatarSelect}
-            />
-
-            <button
-              type="button"
-              disabled={uploadingAvatar}
-              onClick={() => fileInputRef.current?.click()}
-              aria-label="Upload new profile photo"
-              title="Upload new profile photo (JPG, PNG, WebP up to 5MB)"
-              className="absolute -bottom-2 -left-2 p-1.5 rounded-full bg-brand-navy text-brand-gold hover:bg-brand-navy-light transition-all border-2 border-white shadow-md focus:outline-none focus:ring-2 focus:ring-brand-gold disabled:opacity-50 min-h-[32px] min-w-[32px] flex items-center justify-center cursor-pointer"
-            >
-              {uploadingAvatar ? (
-                <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-              ) : (
-                <Camera className="w-3.5 h-3.5" />
-              )}
-            </button>
-
-            <span className="absolute -bottom-2 -right-2 px-2 py-0.5 rounded-full bg-emerald-500 text-white text-[10px] font-bold border-2 border-white shadow-xs">
-              Verified
-            </span>
-          </div>
-
-          {/* Bio details */}
-          <div className="flex-1 text-center sm:text-left space-y-3 min-w-0">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-              <div className="min-w-0">
-                <h1 className="text-xl sm:text-2xl font-bold text-brand-navy font-serif break-words">
-                  {profile?.fullName || user?.name}
-                </h1>
-                <p className="text-xs text-brand-gold-dark font-bold tracking-wider mt-0.5">
-                  Client ID: {profile?.clientCode || '—'}
-                </p>
-              </div>
-
-              <button
-                type="button"
-                onClick={() => setRevealSensitive(!revealSensitive)}
-                aria-pressed={revealSensitive}
-                className="inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-md border border-slate-200 text-xs text-slate-600 hover:bg-slate-50 transition-colors shrink-0 min-h-[44px]"
-              >
-                {revealSensitive ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
-                <span>{revealSensitive ? 'Hide identifiers' : 'Show masked IDs'}</span>
-              </button>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2 border-t border-slate-100 text-xs">
-              <div className="bg-slate-50 p-2.5 rounded-lg border border-slate-100">
-                <span className="text-slate-400 block text-[10px] uppercase font-bold">Passport Number</span>
-                <span className="text-slate-800 font-mono font-bold text-sm break-all">
-                  {revealSensitive
-                    ? profile?.passportMasked || user?.identifier
-                    : profile?.passportMasked?.replace(/[A-Z0-9]/g, '•') || '••••••••'}
-                </span>
-              </div>
-
-              <div className="bg-slate-50 p-2.5 rounded-lg border border-slate-100">
-                <span className="text-slate-400 block text-[10px] uppercase font-bold">National ID (NID)</span>
-                <span className="text-slate-800 font-mono font-bold text-sm break-all">
-                  {revealSensitive ? profile?.nidMasked || '—' : '••••••••••••'}
-                </span>
-              </div>
-
-              <div className="bg-slate-50 p-2.5 rounded-lg border border-slate-100">
-                <span className="text-slate-400 block text-[10px] uppercase font-bold">Date of Birth</span>
-                <span className="text-slate-800 font-medium text-sm">
-                  {profile?.dateOfBirth ? new Date(profile.dateOfBirth).toLocaleDateString('en-GB') : 'N/A'}
-                </span>
-              </div>
-            </div>
-
-            <p className="text-[11px] text-slate-500 leading-relaxed pt-1">
-              Your identifiers are stored encrypted and shown masked. Only you and your assigned case officer can see
-              this page.
-            </p>
-          </div>
-        </div>
-      </section>
-
-      {/* 2. Application Switcher */}
+      {/* Application Switcher (only shown if multiple cases) */}
       {applications.length > 1 && (
-        <nav aria-label="Your visa cases" className="space-y-2">
-          <span className="text-xs font-bold text-slate-500 uppercase tracking-wider block">
-            Your visa cases ({applications.length})
+        <nav aria-label="Your visa cases" className="flex items-center gap-2 overflow-x-auto pb-1">
+          <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider shrink-0 mr-1">
+            Cases ({applications.length}):
           </span>
-          <div className="flex items-center gap-2 overflow-x-auto pb-1 -mx-4 px-4 sm:mx-0 sm:px-0">
-            {applications.map((app) => (
-              <button
-                key={app.id}
-                type="button"
-                onClick={() => handleSelectApplication(app.id)}
-                aria-current={selectedAppId === app.id ? 'true' : undefined}
-                className={`px-3.5 py-2.5 rounded-lg text-xs font-bold transition-all shrink-0 flex items-center gap-2 min-h-[44px] ${
-                  selectedAppId === app.id
-                    ? 'bg-brand-navy text-white shadow-xs'
-                    : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'
-                }`}
-              >
-                <span className="whitespace-nowrap">
-                  {app.destinationCountry} ({app.visaCategory})
-                </span>
-                <span className="text-[10px] font-mono opacity-80">{app.applicationCode}</span>
-              </button>
-            ))}
-          </div>
+          {applications.map((app) => (
+            <button
+              key={app.id}
+              type="button"
+              onClick={() => handleSelectApplication(app.id)}
+              aria-current={selectedAppId === app.id ? 'true' : undefined}
+              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all shrink-0 flex items-center gap-2 min-h-[36px] ${
+                selectedAppId === app.id
+                  ? 'bg-brand-navy text-white shadow-xs'
+                  : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'
+              }`}
+            >
+              <span className="whitespace-nowrap">
+                {app.destinationCountry} ({app.visaCategory})
+              </span>
+              <span className="text-[10px] font-mono opacity-80">{app.applicationCode}</span>
+            </button>
+          ))}
         </nav>
       )}
 
-      {/* 3. Active Case Banner */}
-      {activeApplication ? (
-        <section className="bg-brand-navy text-white rounded-2xl p-5 sm:p-7 shadow-md border border-white/10 space-y-4">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      {/* Top Row: Profile Card (left) + Active Case & Next Procedure (right) */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-stretch">
+        {/* 1. Compact Client Identity Card */}
+        <section className="lg:col-span-5 bg-white rounded-2xl border border-slate-200/80 p-4 sm:p-5 shadow-xs flex flex-col justify-between gap-3">
+          <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-3.5 min-w-0">
+              {/* Avatar (read-only) */}
+              <div className="relative shrink-0">
+                {profile?.avatarUrl ? (
+                  <img
+                    src={profile.avatarUrl}
+                    alt={profile.fullName}
+                    className="w-14 h-14 rounded-xl object-cover border border-brand-gold/40 shadow-xs"
+                  />
+                ) : (
+                  <div className="w-14 h-14 rounded-xl bg-brand-navy text-brand-gold font-bold text-xl flex items-center justify-center shadow-xs">
+                    {profile?.fullName?.[0] || 'C'}
+                  </div>
+                )}
+                <span className="absolute -bottom-1.5 -right-1.5 px-1.5 py-0.5 rounded-full bg-emerald-500 text-white text-[9px] font-bold border-2 border-white">
+                  Verified
+                </span>
+              </div>
+
               <div className="min-w-0">
-                <span className="text-[10px] text-brand-gold uppercase tracking-widest font-bold block">
-                  Active Visa Case • {activeApplication.applicationCode}
-                </span>
-                <h2 className="text-lg sm:text-2xl font-bold font-serif text-white break-words">
-                  {progressDetails?.destinationCountry || activeApplication.destinationCountry} —{' '}
-                  {progressDetails?.visaCategory || activeApplication.visaCategory}
-                </h2>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-2 shrink-0">
-              <span className="px-3.5 py-1.5 rounded-full bg-brand-gold text-brand-navy font-black text-xs uppercase tracking-wider shadow-xs">
-                {activeApplication.status}
-              </span>
-            </div>
-          </div>
-
-          {/* Progress Bar */}
-          <div className="pt-2">
-            <div className="flex justify-between items-center gap-3 text-xs font-semibold mb-1.5 text-slate-300 flex-wrap">
-              <span>Overall Progress</span>
-              <span className="text-brand-gold font-bold font-mono">
-                {activeApplication.completedSteps} of {activeApplication.totalSteps} steps completed (
-                {activeApplication.progressPercent}%)
-              </span>
-            </div>
-            <div
-              className="w-full h-2.5 bg-white/10 rounded-full overflow-hidden"
-              role="progressbar"
-              aria-valuenow={activeApplication.progressPercent}
-              aria-valuemin={0}
-              aria-valuemax={100}
-              aria-label="Overall application progress"
-            >
-              <div
-                className="h-full bg-gradient-to-r from-brand-gold to-brand-gold-light rounded-full transition-all duration-500"
-                style={{ width: `${activeApplication.progressPercent}%` }}
-              />
-            </div>
-          </div>
-        </section>
-      ) : (
-        <section className="bg-white rounded-2xl border border-slate-200/80 p-8 sm:p-12 text-center space-y-3 shadow-xs">
-          <FileQuestion className="w-10 h-10 text-slate-300 mx-auto" />
-          <h2 className="text-lg font-bold text-brand-navy font-serif">No active visa case yet</h2>
-          <p className="text-sm text-slate-600 max-w-md mx-auto leading-relaxed">
-            Once our team opens your file, your case, its steps and your document status will appear here. Contact the
-            office if you are expecting a case to be linked to your passport number.
-          </p>
-          <a
-            href={`tel:${OFFICE.hotline.replace(/\s/g, '')}`}
-            className="inline-flex items-center gap-2 px-5 py-3 rounded-lg bg-brand-navy text-white text-sm font-bold hover:bg-brand-navy-light transition-colors mt-2 min-h-[48px]"
-          >
-            <Phone className="w-4 h-4 text-brand-gold" />
-            <span>Call {OFFICE.hotline}</span>
-          </a>
-        </section>
-      )}
-
-      {/* 4. Next Procedure Highlight */}
-      {activeApplication && (
-        <section className="bg-gradient-to-br from-amber-50 to-orange-50/40 rounded-2xl border-2 border-brand-gold/40 p-5 sm:p-8 shadow-xs">
-          <div className="flex items-start gap-3 sm:gap-4">
-            <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-xl bg-brand-gold text-brand-navy flex items-center justify-center shrink-0 shadow-md">
-              <Clock className="w-6 h-6 stroke-[2.5]" />
-            </div>
-
-            <div className="space-y-2 flex-1 min-w-0">
-              <div className="flex items-center justify-between flex-wrap gap-2">
-                <span className="text-[11px] font-extrabold uppercase tracking-wider text-brand-navy bg-brand-gold/20 px-2.5 py-0.5 rounded">
-                  Next Required Procedure
-                </span>
-                <span className="text-xs font-bold text-brand-navy bg-white px-3 py-1 rounded-md border border-brand-gold/30 flex items-center gap-1.5 shadow-xs">
-                  <Calendar className="w-3.5 h-3.5 text-brand-gold-dark" />
-                  <span>
-                    Scheduled Date:{' '}
-                    {progressDetails?.nextProcedure?.scheduledDate ? (
-                      <strong className="text-brand-navy font-mono">
-                        {progressDetails.nextProcedure.scheduledDate}
-                      </strong>
-                    ) : (
-                      <span className="text-amber-700 italic font-medium">To Be Scheduled</span>
-                    )}
-                  </span>
-                </span>
-              </div>
-
-              <h3 className="text-lg sm:text-xl font-bold text-brand-navy font-serif">
-                {progressDetails?.nextProcedure?.stepName ||
-                  'Your next procedure will be published here by The Visa Gate team.'}
-              </h3>
-
-              <p className="text-sm text-slate-700 leading-relaxed bg-white/70 p-4 rounded-xl border border-brand-gold/20">
-                {progressDetails?.nextProcedure?.instructions ||
-                  'Our processing team is currently working on your file. We will publish the appointment or submission date as soon as it is confirmed.'}
-              </p>
-
-              {progressDetails?.nextProcedure?.deadline && (
-                <p className="text-xs font-semibold text-rose-700 flex items-center gap-1.5">
-                  <AlertCircle className="w-3.5 h-3.5" />
-                  <span>Deadline for this step: {progressDetails.nextProcedure.deadline}</span>
+                <h1 className="text-lg font-bold text-brand-navy tracking-tight truncate">
+                  {profile?.fullName || user?.name}
+                </h1>
+                <p className="text-xs text-brand-gold-dark font-semibold tracking-wide">
+                  Client ID: {profile?.clientCode || '—'}
                 </p>
-              )}
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setRevealSensitive(!revealSensitive)}
+              aria-pressed={revealSensitive}
+              className="inline-flex items-center justify-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-slate-200 text-[11px] font-semibold text-slate-600 hover:bg-slate-50 transition-colors shrink-0 min-h-[36px]"
+            >
+              {revealSensitive ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+              <span className="hidden xs:inline">{revealSensitive ? 'Hide IDs' : 'Show IDs'}</span>
+            </button>
+          </div>
+
+          <div className="grid grid-cols-3 gap-2 pt-2.5 border-t border-slate-100 text-xs">
+            <div className="bg-slate-50 px-2.5 py-2 rounded-lg border border-slate-100 min-w-0">
+              <span className="text-slate-400 block text-[9px] uppercase font-bold tracking-wider">Passport</span>
+              <span className="text-slate-800 font-mono font-bold text-xs truncate block mt-0.5">
+                {revealSensitive
+                  ? profile?.passportMasked || user?.identifier
+                  : profile?.passportMasked?.replace(/[A-Z0-9]/g, '•') || '••••••••'}
+              </span>
+            </div>
+
+            <div className="bg-slate-50 px-2.5 py-2 rounded-lg border border-slate-100 min-w-0">
+              <span className="text-slate-400 block text-[9px] uppercase font-bold tracking-wider">National ID</span>
+              <span className="text-slate-800 font-mono font-bold text-xs truncate block mt-0.5">
+                {revealSensitive ? profile?.nidMasked || '—' : '••••••••••'}
+              </span>
+            </div>
+
+            <div className="bg-slate-50 px-2.5 py-2 rounded-lg border border-slate-100 min-w-0">
+              <span className="text-slate-400 block text-[9px] uppercase font-bold tracking-wider">Date of Birth</span>
+              <span className="text-slate-800 font-semibold text-xs truncate block mt-0.5">
+                {profile?.dateOfBirth ? new Date(profile.dateOfBirth).toLocaleDateString('en-GB') : 'N/A'}
+              </span>
             </div>
           </div>
+
+          <p className="text-[10px] text-slate-400 leading-snug">
+            Encrypted &amp; masked for your privacy. Only you and your assigned case officer can view this page.
+          </p>
         </section>
-      )}
 
-      {/* 5. Step Timeline */}
-      {activeApplication && (
-        <section className="bg-white rounded-2xl border border-slate-200/80 p-5 sm:p-8 shadow-xs space-y-6">
-          <div className="border-b border-slate-100 pb-4">
-            <h2 className="text-lg sm:text-xl font-bold text-brand-navy font-serif">
-              Application Progress Timeline
-            </h2>
-            <p className="text-xs text-slate-500 mt-0.5">
-              The stages of your visa processing, in order. Each step is updated by your case officer.
+        {/* 2. Active Case Banner + Next Procedure Highlight */}
+        {activeApplication ? (
+          <section className="lg:col-span-7 flex flex-col gap-3">
+            {/* Active Case Summary */}
+            <div className="bg-brand-navy text-white rounded-2xl p-4 sm:p-5 shadow-sm border border-white/10 space-y-3">
+              <div className="flex items-start sm:items-center justify-between gap-3">
+                <div className="min-w-0">
+                  <span className="text-[10px] text-brand-gold uppercase tracking-widest font-bold block">
+                    Active Visa Case • {activeApplication.applicationCode}
+                  </span>
+                  <h2 className="text-base sm:text-xl font-bold tracking-tight text-white break-words mt-0.5">
+                    {progressDetails?.destinationCountry || activeApplication.destinationCountry} —{' '}
+                    {progressDetails?.visaCategory || activeApplication.visaCategory}
+                  </h2>
+                </div>
+
+                <span className="px-3 py-1 rounded-full bg-brand-gold text-brand-navy font-extrabold text-[11px] uppercase tracking-wider shrink-0">
+                  {activeApplication.status}
+                </span>
+              </div>
+
+              {/* Progress Bar */}
+              <div>
+                <div className="flex justify-between items-center gap-3 text-xs font-medium mb-1 text-slate-300">
+                  <span>Overall Progress</span>
+                  <span className="text-brand-gold font-bold font-mono">
+                    {activeApplication.completedSteps}/{activeApplication.totalSteps} steps ({activeApplication.progressPercent}%)
+                  </span>
+                </div>
+                <div
+                  className="w-full h-2 bg-white/10 rounded-full overflow-hidden"
+                  role="progressbar"
+                  aria-valuenow={activeApplication.progressPercent}
+                  aria-valuemin={0}
+                  aria-valuemax={100}
+                  aria-label="Overall application progress"
+                >
+                  <div
+                    className="h-full bg-gradient-to-r from-brand-gold to-brand-gold-light rounded-full transition-all duration-500"
+                    style={{ width: `${activeApplication.progressPercent}%` }}
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Next Required Procedure (Compact Strip) */}
+            <div className="flex-1 bg-gradient-to-br from-amber-50 to-orange-50/40 rounded-2xl border border-brand-gold/40 p-4 shadow-xs flex items-start gap-3">
+              <div className="w-9 h-9 rounded-lg bg-brand-gold text-brand-navy flex items-center justify-center shrink-0 shadow-xs mt-0.5">
+                <Clock className="w-4 h-4 stroke-[2.5]" />
+              </div>
+
+              <div className="space-y-1 flex-1 min-w-0">
+                <div className="flex items-center justify-between flex-wrap gap-2">
+                  <span className="text-[10px] font-extrabold uppercase tracking-wider text-brand-navy bg-brand-gold/25 px-2 py-0.5 rounded">
+                    Next Required Procedure
+                  </span>
+                  <span className="text-[11px] font-semibold text-brand-navy bg-white px-2.5 py-0.5 rounded-md border border-brand-gold/30 flex items-center gap-1.5">
+                    <Calendar className="w-3 h-3 text-brand-gold-dark" />
+                    <span>
+                      {progressDetails?.nextProcedure?.scheduledDate ? (
+                        <strong className="font-mono">{progressDetails.nextProcedure.scheduledDate}</strong>
+                      ) : (
+                        <span className="text-amber-700 italic">To Be Scheduled</span>
+                      )}
+                    </span>
+                  </span>
+                </div>
+
+                <h3 className="text-sm sm:text-base font-bold text-brand-navy tracking-tight">
+                  {progressDetails?.nextProcedure?.stepName ||
+                    'Your next procedure will be published here by The Visa Gate team.'}
+                </h3>
+
+                <p className="text-xs text-slate-700 leading-relaxed">
+                  {progressDetails?.nextProcedure?.instructions ||
+                    'Our processing team is currently working on your file. We will publish the appointment or submission date as soon as it is confirmed.'}
+                </p>
+
+                {progressDetails?.nextProcedure?.deadline && (
+                  <p className="text-[11px] font-semibold text-rose-700 flex items-center gap-1">
+                    <AlertCircle className="w-3 h-3" />
+                    <span>Deadline: {progressDetails.nextProcedure.deadline}</span>
+                  </p>
+                )}
+              </div>
+            </div>
+          </section>
+        ) : (
+          <section className="lg:col-span-7 bg-white rounded-2xl border border-slate-200/80 p-6 text-center flex flex-col items-center justify-center space-y-2.5 shadow-xs">
+            <FileQuestion className="w-9 h-9 text-slate-300" />
+            <h2 className="text-base font-bold text-brand-navy tracking-tight">No active visa case yet</h2>
+            <p className="text-xs text-slate-600 max-w-md leading-relaxed">
+              Once our team opens your file, your case, steps and document status will appear here.
             </p>
-          </div>
+            <a
+              href={`tel:${OFFICE.hotline.replace(/\s/g, '')}`}
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-brand-navy text-white text-xs font-bold hover:bg-brand-navy-light transition-colors"
+            >
+              <Phone className="w-3.5 h-3.5 text-brand-gold" />
+              <span>Call {OFFICE.hotline}</span>
+            </a>
+          </section>
+        )}
+      </div>
 
-          {progressDetails?.steps?.length > 0 ? (
-            <ol className="space-y-5 relative before:absolute before:inset-0 before:left-4 before:h-full before:w-0.5 before:bg-slate-200">
-              {progressDetails.steps.map((step: any, idx: number) => {
-                const isCompleted = step.status === StepStatus.COMPLETED;
-                const isInProgress = step.status === StepStatus.IN_PROGRESS;
-                const isDelayed = step.status === StepStatus.DELAYED;
-                const isPending = step.status === StepStatus.PENDING;
-                const isSkipped = step.status === StepStatus.SKIPPED;
+      {/* Main Content Row: Step Timeline (left 7 cols) + Documents & Contact (right 5 cols) */}
+      {activeApplication && (
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-start">
+          {/* 3. Compact Step Timeline */}
+          <section className="lg:col-span-7 bg-white rounded-2xl border border-slate-200/80 p-4 sm:p-5 shadow-xs space-y-3.5">
+            <div className="flex items-center justify-between gap-2 border-b border-slate-100 pb-3">
+              <div>
+                <h2 className="text-base font-bold text-brand-navy tracking-tight">
+                  Application Progress Timeline
+                </h2>
+                <p className="text-[11px] text-slate-500">
+                  Stages of your visa processing, updated by your case officer.
+                </p>
+              </div>
+            </div>
 
-                return (
-                  <li key={step.id || idx} className="relative flex items-start gap-3 sm:gap-4">
-                    {getStepStatusIndicator(step.status)}
+            {progressDetails?.steps?.length > 0 ? (
+              <ol className="space-y-2.5 relative before:absolute before:inset-0 before:left-4 before:h-full before:w-0.5 before:bg-slate-200">
+                {progressDetails.steps.map((step: any, idx: number) => {
+                  const isCompleted = step.status === StepStatus.COMPLETED;
+                  const isInProgress = step.status === StepStatus.IN_PROGRESS;
+                  const isDelayed = step.status === StepStatus.DELAYED;
+                  const isPending = step.status === StepStatus.PENDING;
+                  const isSkipped = step.status === StepStatus.SKIPPED;
 
-                    <div
-                      className={`flex-1 p-4 rounded-xl border transition-all min-w-0 ${
-                        isInProgress
-                          ? 'bg-brand-gold/5 border-brand-gold/50 shadow-xs'
-                          : isCompleted
-                          ? 'bg-slate-50 border-slate-200'
-                          : isDelayed
-                          ? 'bg-rose-50/50 border-rose-200'
-                          : 'bg-white border-slate-100'
-                      }`}
-                    >
-                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 mb-1">
-                        <h3 className="text-sm sm:text-base font-bold text-brand-navy">
-                          {step.sortOrder}. {step.stepName}
-                        </h3>
-                        <span
-                          className={`self-start text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0 ${
-                            isCompleted
-                              ? 'bg-emerald-100 text-emerald-800'
-                              : isInProgress
-                              ? 'bg-brand-gold text-brand-navy'
-                              : isDelayed
-                              ? 'bg-rose-100 text-rose-800'
-                              : isPending
-                              ? 'bg-blue-100 text-blue-800'
-                              : isSkipped
-                              ? 'bg-slate-200 text-slate-600'
-                              : 'bg-slate-100 text-slate-500'
-                          }`}
-                        >
-                          {step.status.replace('_', ' ')}
-                        </span>
-                      </div>
+                  return (
+                    <li key={step.id || idx} className="relative flex items-start gap-3">
+                      {getStepStatusIndicator(step.status)}
 
-                      {/* Dates */}
-                      <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-slate-500 font-mono">
-                        <span className="flex items-center gap-1">
-                          <Calendar className="w-3.5 h-3.5 text-slate-400" />
-                          <span>
-                            Date:{' '}
-                            {step.completedDate ? (
-                              <strong className="text-emerald-700">Completed ({step.completedDate})</strong>
-                            ) : step.scheduledDate ? (
-                              <strong className="text-brand-navy">{step.scheduledDate}</strong>
-                            ) : (
-                              <span className="text-amber-800 italic font-sans font-medium">To Be Scheduled</span>
-                            )}
+                      <div
+                        className={`flex-1 px-3.5 py-2.5 rounded-xl border transition-all min-w-0 ${
+                          isInProgress
+                            ? 'bg-brand-gold/5 border-brand-gold/50 shadow-xs'
+                            : isCompleted
+                            ? 'bg-slate-50/80 border-slate-200'
+                            : isDelayed
+                            ? 'bg-rose-50/50 border-rose-200'
+                            : 'bg-white border-slate-100'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between gap-2">
+                          <h3 className="text-xs sm:text-sm font-bold text-brand-navy tracking-tight truncate">
+                            {step.sortOrder}. {step.stepName}
+                          </h3>
+                          <span
+                            className={`text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0 ${
+                              isCompleted
+                                ? 'bg-emerald-100 text-emerald-800'
+                                : isInProgress
+                                ? 'bg-brand-gold text-brand-navy'
+                                : isDelayed
+                                ? 'bg-rose-100 text-rose-800'
+                                : isPending
+                                ? 'bg-blue-100 text-blue-800'
+                                : isSkipped
+                                ? 'bg-slate-200 text-slate-600'
+                                : 'bg-slate-100 text-slate-500'
+                            }`}
+                          >
+                            {step.status.replace('_', ' ')}
                           </span>
-                        </span>
-                        {step.deadline && (
-                          <span className="text-rose-600 font-semibold">• Deadline: {step.deadline}</span>
+                        </div>
+
+                        <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[11px] text-slate-500 font-mono">
+                          <span className="flex items-center gap-1">
+                            <Calendar className="w-3 h-3 text-slate-400" />
+                            <span>
+                              {step.completedDate ? (
+                                <strong className="text-emerald-700">Completed ({step.completedDate})</strong>
+                              ) : step.scheduledDate ? (
+                                <strong className="text-brand-navy">{step.scheduledDate}</strong>
+                              ) : (
+                                <span className="text-amber-800 italic font-sans font-medium">To Be Scheduled</span>
+                              )}
+                            </span>
+                          </span>
+                          {step.deadline && (
+                            <span className="text-rose-600 font-semibold">• Deadline: {step.deadline}</span>
+                          )}
+                        </div>
+
+                        {step.instructions && (
+                          <p className="mt-1.5 text-[11px] text-brand-navy/90 bg-brand-gold/10 border border-brand-gold/25 rounded-lg px-2.5 py-1.5 leading-snug">
+                            <strong className="text-brand-gold-dark uppercase text-[9px] tracking-wider mr-1.5">Action:</strong>
+                            {step.instructions}
+                          </p>
                         )}
                       </div>
+                    </li>
+                  );
+                })}
+              </ol>
+            ) : (
+              <p className="text-xs text-slate-500 text-center py-6 bg-slate-50 rounded-xl border border-dashed border-slate-200">
+                Your step-by-step timeline is being prepared.
+              </p>
+            )}
 
-                      {step.instructions && (
-                        <div className="mt-2.5 p-2.5 rounded-lg bg-brand-gold/10 border border-brand-gold/25 text-xs text-brand-navy">
-                          <span className="font-bold block text-[10px] uppercase tracking-wider text-brand-gold-dark mb-0.5">
-                            What you need to do
-                          </span>
-                          <p className="leading-relaxed">{step.instructions}</p>
-                        </div>
-                      )}
-                    </div>
-                  </li>
-                );
-              })}
-            </ol>
-          ) : (
-            <p className="text-sm text-slate-500 text-center py-8 bg-slate-50 rounded-xl border border-dashed border-slate-200">
-              Your step-by-step timeline is being prepared. It will appear here once your case officer publishes it.
-            </p>
-          )}
+            <EstimateNotice compact />
+          </section>
 
-          <EstimateNotice compact />
-        </section>
-      )}
-
-      {/* 6. Submitted Documents */}
-      {activeApplication && (
-        <section className="bg-white rounded-2xl border border-slate-200/80 p-5 sm:p-8 shadow-xs space-y-6">
-          <div className="border-b border-slate-100 pb-4">
-            <h2 className="text-lg sm:text-xl font-bold text-brand-navy font-serif">
-              Submitted Documents &amp; Verification Status
-            </h2>
-            <p className="text-xs text-slate-500 mt-0.5">
-              The status of the papers you have submitted. We list only the document name and its verification state —
-              your files are not stored in your browser.
-            </p>
-          </div>
-
-          {documents.length > 0 ? (
-            <>
-              {/* Desktop table */}
-              <div className="table-scroll hidden sm:block">
-                <table className="w-full text-left text-xs min-w-[520px]">
-                  <caption className="sr-only">
-                    Documents you have submitted and their current verification status
-                  </caption>
-                  <thead className="bg-slate-50 text-slate-500 uppercase font-bold border-y border-slate-200">
-                    <tr>
-                      <th scope="col" className="py-3 px-4">
-                        Document Name
-                      </th>
-                      <th scope="col" className="py-3 px-4">
-                        Verification Status
-                      </th>
-                      <th scope="col" className="py-3 px-4 text-right">
-                        Last Updated
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100">
-                    {documents.map((doc: any) => (
-                      <tr key={doc.id} className="hover:bg-slate-50/80">
-                        <td className="py-3 px-4 font-semibold text-slate-800">
-                          <span className="flex items-center gap-2">
-                            <FileCheck2 className="w-4 h-4 text-brand-navy shrink-0" />
-                            <span>{doc.documentName}</span>
-                          </span>
-                        </td>
-                        <td className="py-3 px-4">{getDocStatusBadge(doc.status)}</td>
-                        <td className="py-3 px-4 text-right text-slate-400 font-mono">
-                          {doc.verifiedDate || doc.submittedDate || '—'}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+          {/* Right Column: Submitted Documents + Compact Case Officer Contact */}
+          <div className="lg:col-span-5 space-y-4">
+            {/* 4. Submitted Documents */}
+            <section className="bg-white rounded-2xl border border-slate-200/80 p-4 sm:p-5 shadow-xs space-y-3">
+              <div className="border-b border-slate-100 pb-3">
+                <h2 className="text-base font-bold text-brand-navy tracking-tight">
+                  Submitted Documents
+                </h2>
+                <p className="text-[11px] text-slate-500">
+                  Verification status of your submitted papers (read-only).
+                </p>
               </div>
 
-              {/* Mobile card list */}
-              <ul className="sm:hidden space-y-2.5">
-                {documents.map((doc: any) => (
-                  <li
-                    key={doc.id}
-                    className="p-3.5 rounded-xl border border-slate-200 bg-slate-50/50 space-y-2"
-                  >
-                    <span className="flex items-center gap-2 font-semibold text-slate-800 text-xs">
-                      <FileCheck2 className="w-4 h-4 text-brand-navy shrink-0" />
-                      <span>{doc.documentName}</span>
-                    </span>
-                    <span className="flex items-center justify-between gap-3 flex-wrap">
-                      {getDocStatusBadge(doc.status)}
-                      <span className="text-[10px] text-slate-400 font-mono">
-                        {doc.verifiedDate || doc.submittedDate || '—'}
-                      </span>
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            </>
-          ) : (
-            <p className="text-sm text-slate-500 text-center py-8 bg-slate-50 rounded-xl border border-dashed border-slate-200">
-              No documents have been recorded against this case yet. Your case officer will publish each document here
-              as it is received.
-            </p>
-          )}
-        </section>
+              {documents.length > 0 ? (
+                <ul className="divide-y divide-slate-100">
+                  {documents.map((doc: any) => (
+                    <li
+                      key={doc.id}
+                      className="py-2.5 flex items-center justify-between gap-2 text-xs"
+                    >
+                      <div className="flex items-center gap-2 min-w-0">
+                        <FileCheck2 className="w-4 h-4 text-brand-navy shrink-0" />
+                        <div className="min-w-0">
+                          <p className="font-semibold text-slate-800 truncate">{doc.documentName}</p>
+                          <p className="text-[10px] text-slate-400 font-mono">
+                            {doc.verifiedDate || doc.submittedDate || '—'}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="shrink-0">{getDocStatusBadge(doc.status)}</div>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-xs text-slate-500 text-center py-5 bg-slate-50 rounded-xl border border-dashed border-slate-200">
+                  No documents recorded against this case yet.
+                </p>
+              )}
+            </section>
+
+            {/* 5. Compact Case Officer Contact */}
+            <section className="bg-white rounded-2xl border border-slate-200/80 p-4 sm:p-5 shadow-xs space-y-3">
+              <div className="flex items-center justify-between gap-2 pb-2.5 border-b border-slate-100">
+                <div className="flex items-center gap-2">
+                  <Shield className="w-4 h-4 text-brand-gold-dark" />
+                  <h2 className="text-sm font-bold text-brand-navy tracking-tight">Need to speak to us?</h2>
+                </div>
+                <span className="text-[10px] text-slate-500 font-medium">Sat–Thu, 11 AM–6 PM</span>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                <a
+                  href={`tel:${OFFICE.hotline.replace(/\s/g, '')}`}
+                  className="flex items-center gap-2.5 p-2.5 rounded-xl border border-slate-200 hover:border-brand-gold/60 hover:bg-brand-bg transition-colors"
+                >
+                  <span className="w-8 h-8 rounded-lg bg-brand-bg text-brand-navy flex items-center justify-center shrink-0">
+                    <Phone className="w-3.5 h-3.5" />
+                  </span>
+                  <span className="min-w-0">
+                    <span className="block text-[9px] font-bold uppercase tracking-wider text-slate-400">Hotline</span>
+                    <span className="block text-xs font-bold text-brand-navy truncate">{OFFICE.hotline}</span>
+                  </span>
+                </a>
+
+                <a
+                  href={`mailto:${OFFICE.email}`}
+                  className="flex items-center gap-2.5 p-2.5 rounded-xl border border-slate-200 hover:border-brand-gold/60 hover:bg-brand-bg transition-colors"
+                >
+                  <span className="w-8 h-8 rounded-lg bg-brand-bg text-brand-navy flex items-center justify-center shrink-0">
+                    <Mail className="w-3.5 h-3.5" />
+                  </span>
+                  <span className="min-w-0">
+                    <span className="block text-[9px] font-bold uppercase tracking-wider text-slate-400">Email</span>
+                    <span className="block text-xs font-bold text-brand-navy truncate">{OFFICE.email}</span>
+                  </span>
+                </a>
+              </div>
+
+              <div className="flex items-start gap-2.5 p-2.5 rounded-xl border border-slate-100 bg-slate-50/70 text-xs">
+                <MapPin className="w-4 h-4 text-brand-navy shrink-0 mt-0.5" />
+                <div className="min-w-0">
+                  <span className="font-semibold text-brand-navy block leading-snug">{OFFICE.addressLine2}</span>
+                  <span className="text-[11px] text-slate-500">{OFFICE.landmark}</span>
+                </div>
+              </div>
+
+              <p className="text-[10px] text-slate-500 leading-snug flex items-center gap-1.5">
+                <ArrowRight className="w-3 h-3 text-brand-gold-dark shrink-0" />
+                <span>
+                  Quote your <strong className="text-brand-navy">Client ID ({profile?.clientCode || '—'})</strong> when calling.
+                </span>
+              </p>
+            </section>
+          </div>
+        </div>
       )}
-
-      {/* 7. Contact Your Case Officer */}
-      <section className="bg-white rounded-2xl border border-slate-200/80 p-5 sm:p-8 shadow-xs">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-100 mb-5">
-          <div className="flex items-center gap-2.5">
-            <Shield className="w-5 h-5 text-brand-gold-dark" />
-            <h2 className="text-lg font-bold text-brand-navy font-serif">Need to speak to us?</h2>
-          </div>
-          <p className="text-xs text-slate-500">Sat – Thu, 11:00 AM – 6:00 PM</p>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          <a
-            href={`tel:${OFFICE.hotline.replace(/\s/g, '')}`}
-            className="flex items-center gap-3 p-3.5 rounded-xl border border-slate-200 hover:border-brand-gold/60 hover:bg-brand-bg transition-colors min-h-[64px]"
-          >
-            <span className="w-9 h-9 rounded-lg bg-brand-bg text-brand-navy flex items-center justify-center shrink-0">
-              <Phone className="w-4 h-4" />
-            </span>
-            <span className="min-w-0">
-              <span className="block text-[10px] font-bold uppercase tracking-wider text-slate-400">Call hotline</span>
-              <span className="block text-sm font-bold text-brand-navy">{OFFICE.hotline}</span>
-            </span>
-          </a>
-
-          <a
-            href={`mailto:${OFFICE.email}`}
-            className="flex items-center gap-3 p-3.5 rounded-xl border border-slate-200 hover:border-brand-gold/60 hover:bg-brand-bg transition-colors min-h-[64px]"
-          >
-            <span className="w-9 h-9 rounded-lg bg-brand-bg text-brand-navy flex items-center justify-center shrink-0">
-              <Mail className="w-4 h-4" />
-            </span>
-            <span className="min-w-0">
-              <span className="block text-[10px] font-bold uppercase tracking-wider text-slate-400">Email</span>
-              <span className="block text-sm font-bold text-brand-navy break-all">{OFFICE.email}</span>
-            </span>
-          </a>
-
-          <div className="flex items-start gap-3 p-3.5 rounded-xl border border-slate-200 min-h-[64px]">
-            <span className="w-9 h-9 rounded-lg bg-brand-bg text-brand-navy flex items-center justify-center shrink-0">
-              <MapPin className="w-4 h-4" />
-            </span>
-            <span className="min-w-0">
-              <span className="block text-[10px] font-bold uppercase tracking-wider text-slate-400">Visit office</span>
-              <span className="block text-xs font-semibold text-brand-navy leading-snug">
-                {OFFICE.addressLine2}
-                <span className="block font-normal text-slate-500 mt-0.5">{OFFICE.landmark}</span>
-              </span>
-            </span>
-          </div>
-        </div>
-
-        <p className="text-[11px] text-slate-500 leading-relaxed mt-4 flex items-start gap-2">
-          <ArrowRight className="w-3.5 h-3.5 text-brand-gold-dark shrink-0 mt-0.5" />
-          <span>
-            When you call, please quote your <strong className="text-brand-navy">Client ID</strong> (
-            {profile?.clientCode || '—'}) so we can pull your file immediately.
-          </span>
-        </p>
-      </section>
     </div>
   );
 };

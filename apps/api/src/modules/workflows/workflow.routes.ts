@@ -20,6 +20,7 @@ router.delete('/templates/:id', requireRole(RoleName.ADMIN), WorkflowController.
 router.get('/applications/:applicationId/steps', WorkflowController.getApplicationSteps);
 router.post('/applications/:applicationId/steps', WorkflowController.addStep);
 router.post('/applications/:applicationId/steps/reorder', WorkflowController.reorderSteps);
+router.post('/applications/:applicationId/apply-template', WorkflowController.applyTemplate);
 router.patch('/steps/:id', WorkflowController.updateStep);
 router.delete('/steps/:id', WorkflowController.deleteStep);
 

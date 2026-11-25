@@ -109,6 +109,7 @@ export class BookingService {
     };
 
     store.bookings.unshift(newBooking);
+    store.saveToDisk();
 
     // Notify administrators
     const admins = store.users.filter((u) => u.role === 'ADMIN');
@@ -227,6 +228,7 @@ export class BookingService {
     }
 
     booking.updatedAt = new Date();
+    store.saveToDisk();
 
     await AuditService.record({
       userId: actorId,

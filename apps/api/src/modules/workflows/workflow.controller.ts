@@ -103,4 +103,20 @@ export class WorkflowController {
       next(error);
     }
   }
+
+  static async applyTemplate(req: AuthenticatedRequest, res: Response, next: NextFunction) {
+    try {
+      const { templateId, mode } = req.body;
+      const actorId = req.user?.userId || 'system';
+      const steps = await WorkflowService.applyTemplateToApplication(
+        req.params.applicationId,
+        templateId,
+        mode === 'append' ? 'append' : 'replace',
+        actorId
+      );
+      return sendSuccess(res, steps, 'Workflow template applied to application');
+    } catch (error) {
+      next(error);
+    }
+  }
 }

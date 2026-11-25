@@ -313,13 +313,18 @@ class UnifiedDataStore {
     this.seedStaticCatalog();
     // 2. Synchronously seed baseline records (users with bcrypt hashes, staff, clients, sample app)
     this.seedBaselineData();
-    // 3. Load persisted database from disk and merge on top
+    // 3. Load persisted database from disk and merge on top (synchronous fallback)
     this.loadFromDisk();
-    // 4. Save merged, healthy state back to disk
-    this.saveToDisk();
+    // 4. Save merged state back to disk (without pushing to Firebase before loadFromFirebase runs)
+    this.saveToDisk(false);
+    // 5. Async: Load from Firebase Firestore (source of truth) and merge on top
+    //    This runs after the server starts so requests are served immediately from disk/seed
+    this.loadFromFirebase().catch(err => {
+      console.warn('[DataStore] Firebase async load failed (using disk data):', err?.message || err);
+    });
   }
 
-  public saveToDisk() {
+  public saveToDisk(syncFirebase = true) {
     try {
       if (!fs.existsSync(this.storageDir)) {
         fs.mkdirSync(this.storageDir, { recursive: true });
@@ -343,6 +348,163 @@ class UnifiedDataStore {
       fs.writeFileSync(this.storageFile, JSON.stringify(data, null, 2), 'utf-8');
     } catch (err) {
       console.error('[DataStore] Failed to save database to disk:', err);
+    }
+
+    if (syncFirebase) {
+      this.saveToFirebase();
+    }
+  }
+
+  /**
+   * Save all transactional data to Firebase Firestore (non-blocking, fire-and-forget).
+   * Called after every write operation to keep Firebase as the persistent source of truth.
+   */
+  public saveToFirebase(): void {
+    // Fire-and-forget — never blocks request handlers
+    import('../services/firebase.service').then(({ FirebasePersistence }) => {
+      FirebasePersistence.saveAll({
+        users: this.users,
+        clients: this.clients,
+        staff: this.staff,
+        applications: this.applications,
+        applicationSteps: this.applicationSteps,
+        stepHistory: this.stepHistory,
+        documents: this.documents,
+        payments: this.payments,
+        bookings: this.bookings,
+        countries: this.countries,
+        visaPrograms: this.visaPrograms,
+        visaCategories: this.visaCategories,
+        workflowTemplates: this.workflowTemplates,
+      }).catch(err => console.warn('[DataStore] saveToFirebase error:', err?.message));
+    }).catch(() => {});
+  }
+
+  /**
+   * Save a single record to Firebase Firestore (non-blocking).
+   * Use after individual create/update/delete operations for fast sync.
+   */
+  public saveRecordToFirebase(collectionName: string, id: string, data: any): void {
+    import('../services/firebase.service').then(({ FirebasePersistence }) => {
+      FirebasePersistence.saveRecord(collectionName, id, data).catch(() => {});
+    }).catch(() => {});
+  }
+
+  /**
+   * Delete a single record from Firebase Firestore (non-blocking).
+   */
+  public deleteRecordFromFirebase(collectionName: string, id: string): void {
+    import('../services/firebase.service').then(({ FirebasePersistence }) => {
+      FirebasePersistence.deleteRecord(collectionName, id).catch(() => {});
+    }).catch(() => {});
+  }
+
+  /**
+   * Load ALL data from Firebase Firestore and merge into in-memory store.
+   * This is the primary persistence source — called async after server starts.
+   * Firebase data overwrites disk/seed data for all transactional collections.
+   */
+  public async loadFromFirebase(): Promise<void> {
+    try {
+      const { FirebasePersistence } = await import('../services/firebase.service');
+      const [initialized, fbData] = await Promise.all([
+        FirebasePersistence.isInitialized(),
+        FirebasePersistence.loadAll(),
+      ]);
+
+      const removedSeedUserIds = new Set(['usr-admin-legacy', 'usr-staff-1']);
+      const removedSeedStaffIds = new Set(['stf-1']);
+
+      if (initialized) {
+        // Firestore is 100% authoritative — replace arrays directly so deletions are preserved
+        if (fbData.users && fbData.users.length > 0) {
+          const rootAdmin = this.users.find(u => u.id === 'usr-admin-1');
+          this.users = fbData.users.filter((u: any) => !removedSeedUserIds.has(u.id));
+          if (rootAdmin && !this.users.some(u => u.id === 'usr-admin-1')) {
+            this.users.unshift(rootAdmin);
+          }
+        }
+        this.clients = fbData.clients || [];
+        this.staff = (fbData.staff || []).filter((s: any) => !removedSeedStaffIds.has(s.id));
+        this.applications = fbData.applications || [];
+        this.applicationSteps = fbData.applicationSteps || [];
+        this.stepHistory = fbData.stepHistory || [];
+        this.documents = fbData.documents || [];
+        this.payments = fbData.payments || [];
+        this.bookings = fbData.bookings || [];
+        if (fbData.countries && fbData.countries.length > 0) this.countries = fbData.countries;
+        if (fbData.visaPrograms && fbData.visaPrograms.length > 0) this.visaPrograms = fbData.visaPrograms;
+        if (fbData.visaCategories && fbData.visaCategories.length > 0) this.visaCategories = fbData.visaCategories;
+        if (fbData.workflowTemplates && fbData.workflowTemplates.length > 0) this.workflowTemplates = fbData.workflowTemplates;
+      } else {
+        // First-time migration from disk/seed -> Firebase: merge any existing Firestore docs, then push full state
+        if (fbData.users && fbData.users.length > 0) {
+          const filtered = fbData.users.filter((u: any) => !removedSeedUserIds.has(u.id));
+          const fbMap = new Map<string, any>(filtered.map((u: any) => [u.id, u]));
+          this.users = this.users.map(u => fbMap.has(u.id) ? { ...u, ...fbMap.get(u.id) } : u);
+          const currentIds = new Set(this.users.map(u => u.id));
+          for (const u of filtered) { if (!currentIds.has(u.id)) this.users.push(u); }
+        }
+        if (fbData.clients && fbData.clients.length > 0) {
+          const fbMap = new Map<string, any>(fbData.clients.map((c: any) => [c.id, c]));
+          this.clients = this.clients.map(c => fbMap.has(c.id) ? { ...c, ...fbMap.get(c.id) } : c);
+          const currentIds = new Set(this.clients.map(c => c.id));
+          for (const c of fbData.clients) { if (!currentIds.has(c.id)) this.clients.push(c); }
+        }
+        if (fbData.staff && fbData.staff.length > 0) {
+          const filtered = fbData.staff.filter((s: any) => !removedSeedStaffIds.has(s.id));
+          const fbMap = new Map<string, any>(filtered.map((s: any) => [s.id, s]));
+          this.staff = this.staff.map(s => fbMap.has(s.id) ? { ...s, ...fbMap.get(s.id) } : s);
+          const currentIds = new Set(this.staff.map(s => s.id));
+          for (const s of filtered) { if (!currentIds.has(s.id)) this.staff.push(s); }
+        }
+        if (fbData.applications && fbData.applications.length > 0) {
+          const fbMap = new Map<string, any>(fbData.applications.map((a: any) => [a.id, a]));
+          this.applications = this.applications.map(a => fbMap.has(a.id) ? { ...a, ...fbMap.get(a.id) } : a);
+          const currentIds = new Set(this.applications.map(a => a.id));
+          for (const a of fbData.applications) { if (!currentIds.has(a.id)) this.applications.push(a); }
+        }
+        if (fbData.applicationSteps && fbData.applicationSteps.length > 0) {
+          const fbMap = new Map<string, any>(fbData.applicationSteps.map((s: any) => [s.id, s]));
+          this.applicationSteps = this.applicationSteps.map(s => fbMap.has(s.id) ? { ...s, ...fbMap.get(s.id) } : s);
+          const currentIds = new Set(this.applicationSteps.map(s => s.id));
+          for (const s of fbData.applicationSteps) { if (!currentIds.has(s.id)) this.applicationSteps.push(s); }
+        }
+        if (fbData.documents && fbData.documents.length > 0) {
+          const fbMap = new Map<string, any>(fbData.documents.map((d: any) => [d.id, d]));
+          this.documents = this.documents.map(d => fbMap.has(d.id) ? { ...d, ...fbMap.get(d.id) } : d);
+          const currentIds = new Set(this.documents.map(d => d.id));
+          for (const d of fbData.documents) { if (!currentIds.has(d.id)) this.documents.push(d); }
+        }
+        if (fbData.payments && fbData.payments.length > 0) {
+          const fbMap = new Map<string, any>(fbData.payments.map((p: any) => [p.id, p]));
+          this.payments = this.payments.map(p => fbMap.has(p.id) ? { ...p, ...fbMap.get(p.id) } : p);
+          const currentIds = new Set(this.payments.map(p => p.id));
+          for (const p of fbData.payments) { if (!currentIds.has(p.id)) this.payments.push(p); }
+        }
+        if (fbData.bookings && fbData.bookings.length > 0) {
+          const fbMap = new Map<string, any>(fbData.bookings.map((b: any) => [b.id, b]));
+          this.bookings = this.bookings.map(b => fbMap.has(b.id) ? { ...b, ...fbMap.get(b.id) } : b);
+          const currentIds = new Set(this.bookings.map(b => b.id));
+          for (const b of fbData.bookings) { if (!currentIds.has(b.id)) this.bookings.push(b); }
+        }
+        if (fbData.stepHistory && fbData.stepHistory.length > 0) this.stepHistory = fbData.stepHistory;
+        if (fbData.countries && fbData.countries.length > 0) this.countries = fbData.countries;
+        if (fbData.visaPrograms && fbData.visaPrograms.length > 0) this.visaPrograms = fbData.visaPrograms;
+        if (fbData.visaCategories && fbData.visaCategories.length > 0) this.visaCategories = fbData.visaCategories;
+        if (fbData.workflowTemplates && fbData.workflowTemplates.length > 0) this.workflowTemplates = fbData.workflowTemplates;
+
+        console.log('[DataStore] First-time Firebase initialization: migrating local/seed data to Firestore...');
+        this.saveToFirebase();
+        await FirebasePersistence.markInitialized();
+      }
+
+      // Keep local disk backup synced without re-triggering Firebase write
+      this.saveToDisk(false);
+
+      console.log(`[DataStore] Firebase load complete (authoritative=${initialized}). ${this.clients.length} clients, ${this.applications.length} applications, ${this.applicationSteps.length} steps, ${this.documents.length} documents.`);
+    } catch (err) {
+      console.warn('[DataStore] loadFromFirebase failed (using disk data):', (err as Error)?.message || err);
     }
   }
 
@@ -430,11 +592,13 @@ class UnifiedDataStore {
         const data = JSON.parse(raw);
 
         // For transactional data: SMART MERGE (seed baseline records preserved, disk updates & admin-created additions merged)
+        const removedSeedUserIds = new Set(['usr-admin-legacy', 'usr-staff-1']);
         if (data.users && Array.isArray(data.users) && data.users.length > 0) {
-          const diskUserMap = new Map<string, any>(data.users.map((u: any) => [u.id, u]));
+          const filteredDiskUsers = data.users.filter((u: any) => !removedSeedUserIds.has(u.id));
+          const diskUserMap = new Map<string, any>(filteredDiskUsers.map((u: any) => [u.id, u]));
           this.users = this.users.map((u) => diskUserMap.get(u.id) || u);
           const currentIds = new Set(this.users.map((u) => u.id));
-          for (const u of data.users) {
+          for (const u of filteredDiskUsers) {
             if (!currentIds.has(u.id)) this.users.push(u);
           }
         }
@@ -448,11 +612,13 @@ class UnifiedDataStore {
           }
         }
 
+        const removedSeedStaffIds = new Set(['stf-1']);
         if (data.staff && Array.isArray(data.staff) && data.staff.length > 0) {
-          const diskStaffMap = new Map<string, any>(data.staff.map((s: any) => [s.id, s]));
+          const filteredDiskStaff = data.staff.filter((s: any) => !removedSeedStaffIds.has(s.id));
+          const diskStaffMap = new Map<string, any>(filteredDiskStaff.map((s: any) => [s.id, s]));
           this.staff = this.staff.map((s) => diskStaffMap.get(s.id) || s);
           const currentIds = new Set(this.staff.map((s) => s.id));
-          for (const s of data.staff) {
+          for (const s of filteredDiskStaff) {
             if (!currentIds.has(s.id)) this.staff.push(s);
           }
         }
@@ -554,16 +720,12 @@ class UnifiedDataStore {
     ];
 
     // Precomputed bcrypt hashes for synchronous zero-delay startup
-    // Mehedi@TVG
+    // Mehedi@TVG (single root admin credential)
     const adminHash = '$2a$10$qwGh9pkksb.CmE.myDG.9Orju2Xj7uVxLASStwU1Rf4N.H78KSOF6';
-    // AdminSecureGate2026!
-    const legacyAdminHash = '$2a$10$aZk7jNwT.wW/sC1CanpW2ek.Eah/ES6H.zC.4IBepXlG2.mAO02g6';
-    // StaffGate2026!
-    const staffHash = '$2a$10$5ArF4FeJyyJkhmSTRPqA5eqG9tg4xsio7pMsjK/lPU4WxBwqsyK6m';
     // ClientPass2026!
     const clientHash = '$2a$10$fhKVuxav/DADYQ5CyV8v8usRTo/ulBbs6qrLO.PCuMMuwkbENSZdy';
 
-    // Users
+    // Users (single root admin account; additional staff can be created via admin panel)
     this.users = [
       {
         id: 'usr-admin-1',
@@ -572,36 +734,6 @@ class UnifiedDataStore {
         passwordHash: adminHash,
         roleId: 'role-admin',
         role: RoleName.ADMIN,
-        isActive: true,
-        mustChangePassword: false,
-        failedLoginAttempts: 0,
-        lockedUntil: null,
-        lastLoginAt: null,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      },
-      {
-        id: 'usr-admin-legacy',
-        identifier: 'ADMIN@THEVISAGATE.COM',
-        email: 'admin@thevisagate.com',
-        passwordHash: legacyAdminHash,
-        roleId: 'role-admin',
-        role: RoleName.ADMIN,
-        isActive: true,
-        mustChangePassword: false,
-        failedLoginAttempts: 0,
-        lockedUntil: null,
-        lastLoginAt: null,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      },
-      {
-        id: 'usr-staff-1',
-        identifier: 'STAFF@THEVISAGATE.COM',
-        email: 'staff@thevisagate.com',
-        passwordHash: staffHash,
-        roleId: 'role-staff',
-        role: RoleName.STAFF,
         isActive: true,
         mustChangePassword: false,
         failedLoginAttempts: 0,
@@ -642,21 +774,8 @@ class UnifiedDataStore {
       },
     ];
 
-    // Staff Profile
+    // Staff Profile (root admin staff profile)
     this.staff = [
-      {
-        id: 'stf-1',
-        userId: 'usr-staff-1',
-        employeeId: 'EMP-001',
-        fullName: 'Tanvir Hossain',
-        designation: 'Senior Visa Processing Officer',
-        phone: '+8801700112233',
-        email: 'staff@thevisagate.com',
-        permissions: ['clients:view', 'clients:create', 'clients:edit', 'applications:view', 'applications:create', 'applications:edit', 'steps:update', 'documents:view', 'documents:upload', 'documents:verify'],
-        isArchived: false,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      },
       {
         id: 'stf-2',
         userId: 'usr-admin-1',

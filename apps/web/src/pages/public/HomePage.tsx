@@ -126,7 +126,14 @@ export const HomePage: React.FC = () => {
     <div className="space-y-16 sm:space-y-20 pb-16 sm:pb-20">
       {/* Hero Section */}
       <section className="relative bg-brand-navy text-white overflow-hidden py-14 sm:py-20 lg:py-24 border-b border-white/10">
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-brand-navy-light via-brand-navy to-[#0A182B] opacity-90" />
+        {/* Subtle airplane-in-flight background image */}
+        <img
+          src="/hero-flight.jpg"
+          alt=""
+          aria-hidden="true"
+          className="absolute inset-0 w-full h-full object-cover object-center opacity-50 pointer-events-none select-none"
+        />
+        <div className="absolute inset-0 bg-gradient-to-r from-[#0A182B]/80 via-brand-navy/55 to-[#0A182B]/40" />
         <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff08_1px,transparent_1px),linear-gradient(to_bottom,#ffffff08_1px,transparent_1px)] bg-[size:4rem_4rem]" />
 
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">

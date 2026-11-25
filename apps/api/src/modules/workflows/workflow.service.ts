@@ -111,6 +111,7 @@ export class WorkflowService {
     const idx = store.workflowTemplates.findIndex((wf) => wf.id === id);
     if (idx === -1) throw { statusCode: 404, message: 'Workflow template not found' };
     store.workflowTemplates.splice(idx, 1);
+    store.deleteRecordFromFirebase('tvg_workflow_templates', id);
     store.saveToDisk();
     return true;
   }
@@ -169,6 +170,7 @@ export class WorkflowService {
     };
 
     store.applicationSteps.push(newStep);
+    store.saveToDisk();
 
     await AuditService.record({
       userId: actorId,
@@ -247,6 +249,7 @@ export class WorkflowService {
     }
 
     step.updatedAt = new Date();
+    store.saveToDisk();
 
     await AuditService.record({
       userId: actorId,
@@ -267,6 +270,7 @@ export class WorkflowService {
         step.updatedAt = new Date();
       }
     });
+    store.saveToDisk();
 
     await AuditService.record({
       userId: actorId,
@@ -284,7 +288,15 @@ export class WorkflowService {
     if (idx === -1) throw { statusCode: 404, message: 'Step not found' };
     const step = store.applicationSteps[idx];
     store.applicationSteps.splice(idx, 1);
+    store.deleteRecordFromFirebase('tvg_application_steps', stepId);
+
+    const removedHistory = store.stepHistory.filter((h) => h.applicationStepId === stepId);
     store.stepHistory = store.stepHistory.filter((h) => h.applicationStepId !== stepId);
+    for (const h of removedHistory) {
+      store.deleteRecordFromFirebase('tvg_step_history', h.id);
+    }
+
+    store.saveToDisk();
 
     await AuditService.record({
       userId: actorId,
@@ -295,5 +307,69 @@ export class WorkflowService {
     });
 
     return true;
+  }
+
+  static async applyTemplateToApplication(
+    applicationId: string,
+    templateId: string,
+    mode: 'replace' | 'append' = 'replace',
+    actorId: string
+  ) {
+    const app = store.applications.find((a) => a.id === applicationId);
+    if (!app) throw { statusCode: 404, message: 'Application not found' };
+
+    const template = store.workflowTemplates.find((t) => t.id === templateId);
+    if (!template) throw { statusCode: 404, message: 'Workflow template not found' };
+
+    if (mode === 'replace') {
+      const oldSteps = store.applicationSteps.filter((s) => s.applicationId === applicationId);
+      const oldStepIds = new Set(oldSteps.map((s) => s.id));
+      store.applicationSteps = store.applicationSteps.filter((s) => s.applicationId !== applicationId);
+      for (const s of oldSteps) {
+        store.deleteRecordFromFirebase('tvg_application_steps', s.id);
+      }
+      const oldHistory = store.stepHistory.filter((h) => oldStepIds.has(h.applicationStepId));
+      store.stepHistory = store.stepHistory.filter((h) => !oldStepIds.has(h.applicationStepId));
+      for (const h of oldHistory) {
+        store.deleteRecordFromFirebase('tvg_step_history', h.id);
+      }
+    }
+
+    const existingCount = store.applicationSteps.filter((s) => s.applicationId === applicationId).length;
+    const defaultStaffId = (app.assignedStaffIds && app.assignedStaffIds[0]) || null;
+
+    template.steps.forEach((s, idx) => {
+      store.applicationSteps.push({
+        id: `as-${crypto.randomUUID()}`,
+        applicationId,
+        stepName: s.stepName,
+        description: s.description || '',
+        sortOrder: existingCount + idx + 1,
+        status: existingCount === 0 && idx === 0 ? StepStatus.IN_PROGRESS : StepStatus.NOT_STARTED,
+        scheduledDate: null,
+        deadline: null,
+        completedDate: null,
+        assignedStaffId: defaultStaffId,
+        clientInstructions: s.clientInstructions || null,
+        internalNotes: null,
+        isPublishedToClient: true,
+        completedById: null,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
+    });
+
+    app.updatedAt = new Date();
+    store.saveToDisk();
+
+    await AuditService.record({
+      userId: actorId,
+      action: 'WORKFLOW_TEMPLATE_APPLIED',
+      entityType: 'APPLICATION',
+      entityId: applicationId,
+      details: { templateId, templateName: template.name, mode, stepsAdded: template.steps.length },
+    });
+
+    return this.getApplicationSteps(applicationId);
   }
 }

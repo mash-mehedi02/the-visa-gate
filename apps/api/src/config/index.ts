@@ -36,6 +36,13 @@ export const config = {
     localDir: path.resolve(process.cwd(), process.env.STORAGE_LOCAL_DIR || './storage/documents'),
   },
 
+  cloudinary: {
+    cloudName: process.env.CLOUDINARY_CLOUD_NAME || '',
+    apiKey: process.env.CLOUDINARY_API_KEY || '',
+    apiSecret: process.env.CLOUDINARY_API_SECRET || '',
+    folder: process.env.CLOUDINARY_FOLDER || 'thevisagate/documents',
+  },
+
   // Outbound email for one-time verification codes and password reset tokens.
   // When SMTP_HOST is empty the codes fall back to the in-app notification inbox.
   smtp: {

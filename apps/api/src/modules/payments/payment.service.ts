@@ -19,14 +19,24 @@ export class PaymentService {
     const payments = paginated.map((p) => {
       const client = store.clients.find((c) => c.id === p.clientId);
       const app = store.applications.find((a) => a.id === p.applicationId);
+      const country = app ? store.countries.find((c) => c.id === app.countryId) : undefined;
+      const category = app
+        ? store.visaCategories.find((cat) => cat.id === app.visaCategoryId) ||
+          store.visaPrograms.find((pr) => pr.id === app.visaCategoryId)
+        : undefined;
       const recorder = store.users.find((u) => u.id === p.recordedById);
       return {
         id: p.id,
         receiptNumber: p.receiptNumber,
         applicationId: p.applicationId,
         applicationCode: app?.applicationCode || 'N/A',
+        countryName: country?.name || 'N/A',
+        visaCategoryName: category ? ('name' in category ? category.name : (category as any).programName) : 'N/A',
         clientId: p.clientId,
+        clientCode: client?.clientCode || 'N/A',
         clientName: client?.fullName || 'N/A',
+        clientPhone: client?.phone || 'N/A',
+        clientPassportMasked: client?.passportMasked || 'N/A',
         amount: p.amount,
         paymentMethod: p.paymentMethod,
         transactionReference: p.transactionReference,
@@ -34,7 +44,7 @@ export class PaymentService {
         status: p.status,
         internalNotes: p.internalNotes,
         recordedBy: recorder?.identifier || 'System',
-        createdAt: p.createdAt.toISOString(),
+        createdAt: p.createdAt ? new Date(p.createdAt).toISOString() : new Date().toISOString(),
         adjustments: p.adjustments,
       };
     });
@@ -81,6 +91,7 @@ export class PaymentService {
     };
 
     store.payments.push(newPayment);
+    store.saveToDisk();
 
     await AuditService.record({
       userId: actorId,
@@ -113,6 +124,7 @@ export class PaymentService {
       createdById: actorId,
       createdAt: new Date(),
     });
+    store.saveToDisk();
 
     await AuditService.record({
       userId: actorId,

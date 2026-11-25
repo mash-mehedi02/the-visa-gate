@@ -1,7 +1,6 @@
 import { store } from '../../data/store';
 import { StepStatus } from '@thevisagate/shared';
-import path from 'path';
-import fs from 'fs';
+
 
 export class ClientPortalService {
   static async getClientProfile(userId: string) {
@@ -128,37 +127,6 @@ export class ClientPortalService {
       verifiedDate: d.verifiedAt ? new Date(d.verifiedAt).toISOString().split('T')[0] : null,
     }));
   }
-
-  static async updateAvatar(userId: string, file: Express.Multer.File) {
-    const client = store.clients.find((c) => c.userId === userId && !c.isArchived);
-    if (!client) throw { statusCode: 404, message: 'Client profile not found' };
-
-    if (!file) {
-      throw { statusCode: 400, message: 'No image file provided' };
-    }
-
-    const mimeToExt: Record<string, string> = {
-      'image/jpeg': '.jpg',
-      'image/png': '.png',
-      'image/webp': '.webp',
-    };
-
-    const ext = mimeToExt[file.mimetype] || '.jpg';
-    const filename = `avatar-${client.id}-${Date.now()}${ext}`;
-    const avatarDir = path.resolve(process.cwd(), 'uploads/avatars');
-
-    if (!fs.existsSync(avatarDir)) {
-      fs.mkdirSync(avatarDir, { recursive: true });
-    }
-
-    const filePath = path.join(avatarDir, filename);
-    await fs.promises.writeFile(filePath, file.buffer);
-
-    const avatarUrl = `/uploads/avatars/${filename}`;
-    client.avatarUrl = avatarUrl;
-    client.updatedAt = new Date();
-    store.saveToDisk();
-
-    return { avatarUrl };
-  }
+  // Avatar upload is intentionally NOT exposed to clients.
+  // Profile photos are managed by admin/staff only via the clients module.
 }

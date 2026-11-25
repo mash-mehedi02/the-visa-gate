@@ -13,5 +13,6 @@ router.get('/', ApplicationController.list);
 router.get('/:id', ApplicationController.getById);
 router.post('/', ApplicationController.create);
 router.patch('/:id', ApplicationController.update);
+router.delete('/:id', ApplicationController.delete);
 
 export default router;

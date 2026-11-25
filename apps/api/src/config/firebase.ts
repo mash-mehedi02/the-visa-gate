@@ -11,5 +11,9 @@ export const firebaseConfig = {
   measurementId: process.env.FIREBASE_MEASUREMENT_ID || "G-F0J7GJJ6J2"
 };
 
+if (!process.env.FIREBASE_API_KEY) {
+  console.warn('[Firebase] FIREBASE_API_KEY not set in environment. Using bundled development config.');
+}
+
 export const firebaseApp = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
 export const firestore = getFirestore(firebaseApp);

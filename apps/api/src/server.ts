@@ -23,6 +23,9 @@ async function bootstrap() {
 
   const shutdown = async (signal: string) => {
     console.log(`\nReceived ${signal}. Shutting down gracefully...`);
+    try {
+      store.saveToDisk(false);
+    } catch {}
     server.close(async () => {
       try {
         await prisma.$disconnect();
@@ -34,6 +37,14 @@ async function bootstrap() {
 
   process.on('SIGTERM', () => shutdown('SIGTERM'));
   process.on('SIGINT', () => shutdown('SIGINT'));
+
+  // Crash guards: log unexpected errors without taking down the API server
+  process.on('unhandledRejection', (reason) => {
+    console.error('[API] Unhandled Promise Rejection (prevented crash):', reason);
+  });
+  process.on('uncaughtException', (err) => {
+    console.error('[API] Uncaught Exception (prevented crash):', err);
+  });
 }
 
 bootstrap().catch((error) => {

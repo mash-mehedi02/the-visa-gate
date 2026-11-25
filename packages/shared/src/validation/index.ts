@@ -124,8 +124,8 @@ export const UpdateDocumentStatusSchema = z.object({
 });
 
 export const CreatePaymentSchema = z.object({
-  applicationId: z.string().uuid('Invalid application ID'),
-  amount: z.number().positive('Amount must be greater than zero'),
+  applicationId: z.string().min(1, 'Application ID is required'),
+  amount: z.coerce.number().positive('Amount must be greater than zero'),
   paymentMethod: z.nativeEnum(PaymentMethod),
   transactionReference: z.string().optional(),
   paymentDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Payment date must be YYYY-MM-DD'),

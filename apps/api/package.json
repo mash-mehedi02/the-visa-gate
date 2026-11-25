@@ -18,6 +18,7 @@
     "@thevisagate/shared": "file:../../packages/shared",
     "@types/nodemailer": "^8.0.2",
     "bcryptjs": "^2.4.3",
+    "cloudinary": "^2.11.0",
     "cookie-parser": "^1.4.6",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",

@@ -195,9 +195,6 @@ export class ApplicationService {
 
     store.applications.push(newApp);
 
-    // Persist immediately to disk
-    store.saveToDisk();
-
     // Apply workflow template if selected
     if (data.workflowTemplateId) {
       const template = store.workflowTemplates.find((t) => t.id === data.workflowTemplateId);
@@ -224,6 +221,9 @@ export class ApplicationService {
         });
       }
     }
+
+    // Persist application + workflow steps immediately to disk & Firebase
+    store.saveToDisk();
 
     await AuditService.record({
       userId: actorId,
@@ -256,6 +256,7 @@ export class ApplicationService {
     if (data.applicationDate) app.applicationDate = data.applicationDate;
     if (data.internalNotes !== undefined) app.internalNotes = data.internalNotes;
     app.updatedAt = new Date();
+    store.saveToDisk();
 
     await AuditService.record({
       userId: actorId,
@@ -266,5 +267,53 @@ export class ApplicationService {
     });
 
     return app;
+  }
+
+  static async delete(id: string, actorId: string) {
+    const idx = store.applications.findIndex((a) => a.id === id);
+    if (idx === -1) throw { statusCode: 404, message: 'Application not found' };
+
+    const app = store.applications[idx];
+    store.applications.splice(idx, 1);
+    store.deleteRecordFromFirebase('tvg_applications', id);
+
+    // Cascade delete steps & step history
+    const removedSteps = store.applicationSteps.filter((s) => s.applicationId === id);
+    const removedStepIds = new Set(removedSteps.map((s) => s.id));
+    store.applicationSteps = store.applicationSteps.filter((s) => s.applicationId !== id);
+    for (const s of removedSteps) {
+      store.deleteRecordFromFirebase('tvg_application_steps', s.id);
+    }
+
+    const removedHistory = store.stepHistory.filter((h) => removedStepIds.has(h.applicationStepId));
+    store.stepHistory = store.stepHistory.filter((h) => !removedStepIds.has(h.applicationStepId));
+    for (const h of removedHistory) {
+      store.deleteRecordFromFirebase('tvg_step_history', h.id);
+    }
+
+    // Cascade delete documents & payments
+    const removedDocs = store.documents.filter((d) => d.applicationId === id);
+    store.documents = store.documents.filter((d) => d.applicationId !== id);
+    for (const d of removedDocs) {
+      store.deleteRecordFromFirebase('tvg_documents', d.id);
+    }
+
+    const removedPayments = store.payments.filter((p) => p.applicationId === id);
+    store.payments = store.payments.filter((p) => p.applicationId !== id);
+    for (const p of removedPayments) {
+      store.deleteRecordFromFirebase('tvg_payments', p.id);
+    }
+
+    store.saveToDisk();
+
+    await AuditService.record({
+      userId: actorId,
+      action: 'APPLICATION_DELETED',
+      entityType: 'APPLICATION',
+      entityId: id,
+      details: { applicationCode: app.applicationCode, deletedSteps: removedSteps.length, deletedDocs: removedDocs.length },
+    });
+
+    return { id, applicationCode: app.applicationCode };
   }
 }

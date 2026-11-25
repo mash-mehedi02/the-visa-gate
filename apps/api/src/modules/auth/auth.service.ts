@@ -96,55 +96,7 @@ export class AuthService {
       throw { statusCode: 401, message: 'Invalid credentials. Please check your passport number and password, or use "Forgot password?" to set a new one.' };
     }
 
-    // MFA Check for Employee Portal (ADMIN, SUPER_ADMIN, STAFF)
-    const isEmployee = user.role === RoleName.ADMIN || user.role === RoleName.SUPER_ADMIN || user.role === RoleName.STAFF;
-    if (isEmployee && !mfaCode) {
-      // Generate 6-digit MFA challenge
-      const challengeCode = crypto.randomInt(100000, 999999).toString();
-      const mfaToken = `mfa_${crypto.randomUUID()}`;
-      const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
-
-      store.mfaChallenges.set(mfaToken, {
-        userId: user.id,
-        code: challengeCode,
-        expiresAt,
-        attempts: 0,
-      });
-
-      // Audit log MFA initiated
-      await AuditService.record({
-        userId: user.id,
-        action: 'MFA_CHALLENGE_ISSUED',
-        entityType: 'USER',
-        entityId: user.id,
-        details: { role: user.role, mfaToken },
-        ipAddress,
-        userAgent,
-      });
-
-      // Deliver the code to the employee's registered contact.
-      const delivery = await VerificationDeliveryService.deliverCode(
-        user.id,
-        user.email,
-        challengeCode,
-        'SIGN_IN',
-        mfaToken
-      );
-
-      if (!config.smtp.host) {
-        console.log(`[AUTH] MFA verification code for ${user.email}: ${challengeCode}`);
-      }
-
-      // Mask destination email or phone for MFA display
-      let maskedDestination = delivery.destination;
-
-      return {
-        requiresMfa: true,
-        mfaToken,
-        maskedDestination,
-      };
-    }
-
+    // Direct session login (two-factor MFA removed for admin/staff login)
     return this.completeLoginSession(user, ipAddress, userAgent);
   }
 

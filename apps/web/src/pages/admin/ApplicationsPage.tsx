@@ -43,6 +43,9 @@ export const ApplicationsPage: React.FC = () => {
   const [countries, setCountries] = useState<any[]>([]);
   const [templates, setTemplates] = useState<any[]>([]);
   const [staffList, setStaffList] = useState<any[]>([]);
+  const [selectedTemplateId, setSelectedTemplateId] = useState('');
+  const [applyMode, setApplyMode] = useState<'replace' | 'append'>('replace');
+  const [applyingTemplate, setApplyingTemplate] = useState(false);
 
   // Form states for creation
   const [createForm, setCreateForm] = useState({
@@ -160,14 +163,55 @@ export const ApplicationsPage: React.FC = () => {
 
   const inspectCase = async (appId: string) => {
     try {
-      const [res, stfRes]: [any, any] = await Promise.all([
+      const [res, stfRes, tmplRes]: [any, any, any] = await Promise.all([
         api.get(`/applications/${appId}`),
         api.get('/staff'),
+        templates.length > 0 ? Promise.resolve({ data: templates }) : api.get('/workflows/templates'),
       ]);
       if (res.data) setSelectedCase(res.data);
       if (stfRes.data) setStaffList(stfRes.data);
+      if (Array.isArray(tmplRes.data)) setTemplates(tmplRes.data);
+      setSelectedTemplateId('');
     } catch (err) {
       console.error(err);
+    }
+  };
+
+  const handleDeleteApplication = async (appId: string, appCode?: string) => {
+    if (!confirm(`Are you sure you want to permanently delete application ${appCode || ''}? This will also remove all its workflow steps, documents, and payment records.`)) {
+      return;
+    }
+    try {
+      await api.delete(`/applications/${appId}`);
+      if (selectedCase?.id === appId) {
+        setSelectedCase(null);
+      }
+      fetchApplications();
+    } catch (err: any) {
+      alert(err.message || 'Failed to delete application');
+    }
+  };
+
+  const handleApplyWorkflowTemplate = async () => {
+    if (!selectedCase || !selectedTemplateId) return;
+    if (selectedCase.steps?.length > 0 && applyMode === 'replace') {
+      if (!confirm(`This will replace the current ${selectedCase.steps.length} step(s) with the selected workflow template. Continue?`)) {
+        return;
+      }
+    }
+    try {
+      setApplyingTemplate(true);
+      await api.post(`/workflows/applications/${selectedCase.id}/apply-template`, {
+        templateId: selectedTemplateId,
+        mode: applyMode,
+      });
+      setSelectedTemplateId('');
+      await inspectCase(selectedCase.id);
+      fetchApplications();
+    } catch (err: any) {
+      alert(err.message || 'Failed to apply workflow template');
+    } finally {
+      setApplyingTemplate(false);
     }
   };
 
@@ -387,13 +431,22 @@ export const ApplicationsPage: React.FC = () => {
                       </span>
                     </td>
                     <td className="py-3.5 px-6 text-right">
-                      <button
-                        onClick={() => inspectCase(app.id)}
-                        className="inline-flex items-center gap-1.5 px-3 py-1 rounded bg-brand-navy hover:bg-brand-navy-light text-white text-xs font-semibold transition-colors"
-                      >
-                        <Workflow className="w-3.5 h-3.5 text-brand-gold" />
-                        <span>Manage Steps</span>
-                      </button>
+                      <div className="inline-flex items-center gap-2">
+                        <button
+                          onClick={() => inspectCase(app.id)}
+                          className="inline-flex items-center gap-1.5 px-3 py-1 rounded bg-brand-navy hover:bg-brand-navy-light text-white text-xs font-semibold transition-colors"
+                        >
+                          <Workflow className="w-3.5 h-3.5 text-brand-gold" />
+                          <span>Manage Steps</span>
+                        </button>
+                        <button
+                          onClick={() => handleDeleteApplication(app.id, app.applicationCode)}
+                          className="inline-flex items-center gap-1 px-2.5 py-1 rounded bg-red-50 hover:bg-red-100 text-red-600 text-xs font-semibold transition-colors"
+                          title="Delete Application"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))
@@ -637,9 +690,63 @@ export const ApplicationsPage: React.FC = () => {
                   <span>Phone: <strong className="text-brand-navy">{selectedCase.client?.phone}</strong></span>
                 </div>
               </div>
-              <button onClick={() => setSelectedCase(null)} className="text-slate-400 hover:text-slate-600">
-                <X className="w-5 h-5" />
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => handleDeleteApplication(selectedCase.id, selectedCase.applicationCode)}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-50 hover:bg-red-100 text-red-600 text-xs font-bold transition-colors"
+                  title="Delete Application"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                  <span>Delete Case</span>
+                </button>
+                <button onClick={() => setSelectedCase(null)} className="text-slate-400 hover:text-slate-600 p-1">
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+            </div>
+
+            {/* Setup / Apply Workflow Template Bar */}
+            <div className="p-4 rounded-xl bg-slate-50 border border-slate-200/80 flex flex-col md:flex-row md:items-center gap-3">
+              <div className="flex-1">
+                <label className="block text-[11px] font-bold text-brand-navy uppercase tracking-wider mb-1">
+                  Setup Workflow Template
+                </label>
+                <select
+                  value={selectedTemplateId}
+                  onChange={(e) => setSelectedTemplateId(e.target.value)}
+                  className="w-full px-3 py-2 rounded-lg border border-slate-300 bg-white text-xs text-slate-800"
+                >
+                  <option value="">-- Choose a workflow template to apply --</option>
+                  {templates.map((t) => (
+                    <option key={t.id} value={t.id}>
+                      {t.name} ({t.totalSteps || t.steps?.length || 0} steps · {typeof t.totalDays === 'number' ? `${t.totalDays} days` : '—'})
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="flex items-end gap-2">
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">
+                    Mode
+                  </label>
+                  <select
+                    value={applyMode}
+                    onChange={(e) => setApplyMode(e.target.value as 'replace' | 'append')}
+                    className="px-2.5 py-2 rounded-lg border border-slate-300 bg-white text-xs text-slate-700"
+                  >
+                    <option value="replace">Replace Steps</option>
+                    <option value="append">Append Steps</option>
+                  </select>
+                </div>
+                <button
+                  type="button"
+                  disabled={!selectedTemplateId || applyingTemplate}
+                  onClick={handleApplyWorkflowTemplate}
+                  className="px-4 py-2 rounded-lg bg-brand-navy hover:bg-brand-navy-light disabled:opacity-40 text-white font-bold text-xs transition-colors shrink-0"
+                >
+                  {applyingTemplate ? 'Applying...' : 'Apply Workflow'}
+                </button>
+              </div>
             </div>
 
             {/* Steps Workflow Engine Management */}

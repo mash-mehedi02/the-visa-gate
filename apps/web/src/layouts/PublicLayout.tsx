@@ -9,8 +9,7 @@ import {
   Menu,
   X,
   User,
-  Globe,
-  Lock
+  Globe
 } from 'lucide-react';
 
 export const PublicLayout: React.FC = () => {
@@ -171,14 +170,6 @@ export const PublicLayout: React.FC = () => {
                 <span>Client Portal (Track Visa)</span>
               </Link>
 
-              <Link
-                to="/admin-access"
-                onClick={() => setMobileMenuOpen(false)}
-                className="w-full mt-2 flex items-center justify-center gap-2 px-4 py-3 rounded-md border border-white/20 text-slate-200 font-bold text-sm min-h-[48px]"
-              >
-                <Lock className="w-4 h-4" />
-                <span>Staff &amp; Admin Sign In</span>
-              </Link>
 
               <div className="mt-4 pt-4 border-t border-white/10 space-y-2 text-xs text-slate-300">
                 <a

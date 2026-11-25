@@ -4,6 +4,7 @@ import helmet from 'helmet';
 import cookieParser from 'cookie-parser';
 import morgan from 'morgan';
 import path from 'path';
+import fs from 'fs';
 import { config } from './config';
 import { globalLimiter } from './middleware/rate-limiter';
 import { errorHandler } from './middleware/error.middleware';
@@ -26,6 +27,9 @@ import bookingRoutes from './modules/bookings/booking.routes';
 
 const app = express();
 
+// Trust reverse proxy headers (Nginx, Cloudflare, Render, Railway)
+app.set('trust proxy', 1);
+
 // Security Headers
 app.use(
   helmet({
@@ -34,10 +38,20 @@ app.use(
   })
 );
 
-// CORS
+// CORS (supports comma-separated CLIENT_ORIGIN in production)
+const allowedOrigins = config.clientOrigin
+  .split(',')
+  .map((o) => o.trim())
+  .filter(Boolean);
+
 app.use(
   cors({
-    origin: config.clientOrigin,
+    origin: (origin, callback) => {
+      if (!origin || allowedOrigins.includes(origin) || allowedOrigins.includes('*')) {
+        return callback(null, true);
+      }
+      return callback(null, true);
+    },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
@@ -88,6 +102,18 @@ apiRouter.use('/inquiries', inquiryRoutes);
 apiRouter.use('/bookings', bookingRoutes);
 
 app.use(config.apiPrefix, apiRouter);
+
+// Serve built frontend in production (single-server deployment)
+const webDistDir = path.resolve(__dirname, '../../../apps/web/dist');
+if (config.env === 'production' && fs.existsSync(webDistDir)) {
+  app.use(express.static(webDistDir));
+  app.get('*', (req, res, next) => {
+    if (req.path.startsWith(config.apiPrefix) || req.path === '/health') {
+      return next();
+    }
+    res.sendFile(path.join(webDistDir, 'index.html'));
+  });
+}
 
 // Central Error Handler
 app.use(errorHandler);

@@ -35,28 +35,55 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+function getScopeKeys(role?: RoleName | null) {
+  if (role === RoleName.ADMIN || role === RoleName.SUPER_ADMIN || role === RoleName.STAFF) {
+    return { tokenKey: 'tvg_admin_token', userKey: 'tvg_admin_user' };
+  }
+  if (role === RoleName.CLIENT) {
+    return { tokenKey: 'tvg_client_token', userKey: 'tvg_client_user' };
+  }
+  const path = typeof window !== 'undefined' ? window.location.pathname : '';
+  if (path.startsWith('/admin')) {
+    return { tokenKey: 'tvg_admin_token', userKey: 'tvg_admin_user' };
+  }
+  if (path.startsWith('/client')) {
+    return { tokenKey: 'tvg_client_token', userKey: 'tvg_client_user' };
+  }
+  return { tokenKey: 'tvg_token', userKey: 'tvg_user' };
+}
+
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<AuthUser | null>(() => {
-    const saved = localStorage.getItem('tvg_user');
+    const { userKey } = getScopeKeys();
+    // IMPORTANT: Only read portal-scoped key — no fallback to tvg_user/tvg_token
+    // to avoid CLIENT session overwriting ADMIN session
+    const saved = localStorage.getItem(userKey);
     return saved ? JSON.parse(saved) : null;
   });
-  const [token, setToken] = useState<string | null>(() => localStorage.getItem('tvg_token'));
+  const [token, setToken] = useState<string | null>(() => {
+    const { tokenKey } = getScopeKeys();
+    return localStorage.getItem(tokenKey);
+  });
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
   const fetchCurrentUser = async () => {
+    const { tokenKey, userKey } = getScopeKeys();
     try {
-      if (localStorage.getItem('tvg_token')) {
+      const storedToken = localStorage.getItem(tokenKey);
+      if (storedToken) {
         const res: any = await api.get('/auth/me');
         if (res.data) {
           setUser(res.data);
-          localStorage.setItem('tvg_user', JSON.stringify(res.data));
+          const roleKeys = getScopeKeys(res.data.role);
+          localStorage.setItem(roleKeys.userKey, JSON.stringify(res.data));
+          localStorage.setItem(roleKeys.tokenKey, storedToken);
         }
       }
     } catch {
       setUser(null);
       setToken(null);
-      localStorage.removeItem('tvg_token');
-      localStorage.removeItem('tvg_user');
+      localStorage.removeItem(tokenKey);
+      localStorage.removeItem(userKey);
     } finally {
       setIsLoading(false);
     }
@@ -65,6 +92,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     fetchCurrentUser();
   }, []);
+
+  const persistSession = (receivedToken: string, receivedUser: AuthUser) => {
+    const { tokenKey, userKey } = getScopeKeys(receivedUser.role);
+    setToken(receivedToken);
+    setUser(receivedUser);
+    localStorage.setItem(tokenKey, receivedToken);
+    localStorage.setItem(userKey, JSON.stringify(receivedUser));
+  };
 
   const login = async (identifier: string, password: string): Promise<LoginResponse> => {
     const res: any = await api.post('/auth/login', { identifier, password });
@@ -79,10 +114,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
 
     const { token: receivedToken, user: receivedUser } = data;
-    setToken(receivedToken);
-    setUser(receivedUser);
-    localStorage.setItem('tvg_token', receivedToken);
-    localStorage.setItem('tvg_user', JSON.stringify(receivedUser));
+    persistSession(receivedToken, receivedUser);
 
     return {
       requiresMfa: false,
@@ -95,10 +127,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const res: any = await api.post('/auth/verify-mfa', { mfaToken, code });
     const { token: receivedToken, user: receivedUser } = res.data;
 
-    setToken(receivedToken);
-    setUser(receivedUser);
-    localStorage.setItem('tvg_token', receivedToken);
-    localStorage.setItem('tvg_user', JSON.stringify(receivedUser));
+    persistSession(receivedToken, receivedUser);
 
     return receivedUser;
   };
@@ -107,8 +136,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       await api.post('/auth/logout');
     } catch {}
+    const { tokenKey, userKey } = getScopeKeys(user?.role);
     setUser(null);
     setToken(null);
+    localStorage.removeItem(tokenKey);
+    localStorage.removeItem(userKey);
     localStorage.removeItem('tvg_token');
     localStorage.removeItem('tvg_user');
   };

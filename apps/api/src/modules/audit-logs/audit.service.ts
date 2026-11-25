@@ -87,7 +87,7 @@ export class AuditService {
           entityId: l.entityId,
           details: l.details,
           ipAddress: l.ipAddress,
-          createdAt: l.createdAt.toISOString(),
+          createdAt: l.createdAt ? new Date(l.createdAt).toISOString() : new Date().toISOString(),
         })),
       };
     } else {
@@ -109,7 +109,7 @@ export class AuditService {
           entityId: l.entityId,
           details: l.details,
           ipAddress: l.ipAddress,
-          createdAt: l.createdAt.toISOString(),
+          createdAt: l.createdAt ? new Date(l.createdAt).toISOString() : new Date().toISOString(),
         })),
       };
     }

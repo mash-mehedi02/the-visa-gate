@@ -8,9 +8,23 @@ export const api = axios.create({
   },
 });
 
-// Intercept requests to add Authorization header from localStorage if cookie is not sent
+function getPortalStorageKeys() {
+  const path = typeof window !== 'undefined' ? window.location.pathname : '';
+  if (path.startsWith('/admin')) {
+    return { tokenKey: 'tvg_admin_token', userKey: 'tvg_admin_user' };
+  }
+  if (path.startsWith('/client')) {
+    return { tokenKey: 'tvg_client_token', userKey: 'tvg_client_user' };
+  }
+  return { tokenKey: 'tvg_token', userKey: 'tvg_user' };
+}
+
+// Intercept requests to add Authorization header from portal-scoped localStorage
+// IMPORTANT: Only use the portal-scoped token — no fallback to tvg_token to avoid
+// CLIENT tokens leaking into ADMIN requests and causing 403 Access Denied errors.
 api.interceptors.request.use((config) => {
-  const token = localStorage.getItem('tvg_token');
+  const { tokenKey } = getPortalStorageKeys();
+  const token = localStorage.getItem(tokenKey);
   if (token && config.headers) {
     config.headers.Authorization = `Bearer ${token}`;
   }
@@ -27,9 +41,9 @@ api.interceptors.response.use(
   (response) => response.data,
   (error) => {
     if (error.response?.status === 401) {
-      // Clear token if expired
-      localStorage.removeItem('tvg_token');
-      localStorage.removeItem('tvg_user');
+      const { tokenKey, userKey } = getPortalStorageKeys();
+      localStorage.removeItem(tokenKey);
+      localStorage.removeItem(userKey);
     }
     return Promise.reject(error.response?.data || error);
   }

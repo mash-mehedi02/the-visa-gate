@@ -22,7 +22,7 @@ export const ClientLayout: React.FC = () => {
 
       {/* Client Portal Header */}
       <header className="sticky top-0 z-40 bg-brand-navy text-white shadow-md border-b border-white/10">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 h-16 sm:h-18 flex items-center justify-between gap-3">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 h-14 sm:h-16 flex items-center justify-between gap-3">
           {/* Official Brand Logo */}
           <Link to="/client/portal" className="flex items-center gap-2.5 group min-w-0">
             <div className="bg-white px-3 py-1.5 rounded-xl shadow-xs border border-white/20 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
@@ -83,14 +83,14 @@ export const ClientLayout: React.FC = () => {
         </div>
       </header>
 
-      {/* Main View Area (Max width optimized for readability) */}
-      <main id="client-main" className="flex-1 max-w-4xl w-full mx-auto px-4 sm:px-6 py-6 sm:py-8">
+      {/* Main View Area (Max width optimized for compact 1-page tracking) */}
+      <main id="client-main" className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 py-4 sm:py-5">
         <Outlet />
       </main>
 
       {/* Client Minimal Footer */}
-      <footer className="bg-white border-t border-slate-200 py-6 text-center text-xs text-slate-500">
-        <div className="max-w-4xl mx-auto px-4 space-y-1.5">
+      <footer className="bg-white border-t border-slate-200 py-4 text-center text-xs text-slate-500">
+        <div className="max-w-7xl mx-auto px-4 space-y-1">
           <p className="font-medium text-slate-700">THE VISA GATE — CLIENT APPLICATION TRACKING</p>
           <p>
             Need assistance with your scheduled procedure? Contact your assigned case officer or call{' '}

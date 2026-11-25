@@ -44,15 +44,6 @@ export class ClientPortalController {
       next(error);
     }
   }
-
-  static async updateAvatar(req: AuthenticatedRequest, res: Response, next: NextFunction) {
-    try {
-      if (!req.user) return sendError(res, 'Unauthenticated', 401);
-      if (!req.file) return sendError(res, 'Please provide an image file', 400);
-      const result = await ClientPortalService.updateAvatar(req.user.userId, req.file);
-      return sendSuccess(res, result, 'Profile photo updated successfully');
-    } catch (error) {
-      next(error);
-    }
-  }
+  // Avatar upload is intentionally NOT exposed to clients.
+  // Profile photos are managed by admin/staff only via PUT /api/v1/clients/:id/avatar.
 }

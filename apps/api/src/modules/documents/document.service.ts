@@ -286,6 +286,7 @@ export class DocumentService {
     }
 
     store.documents.splice(idx, 1);
+    store.deleteRecordFromFirebase('tvg_documents', documentId);
     store.saveToDisk();
 
     await AuditService.record({

@@ -49,4 +49,14 @@ export class ApplicationController {
       next(error);
     }
   }
+
+  static async delete(req: AuthenticatedRequest, res: Response, next: NextFunction) {
+    try {
+      const actorId = req.user?.userId || 'system';
+      const result = await ApplicationService.delete(req.params.id, actorId);
+      return sendSuccess(res, result, 'Application deleted successfully');
+    } catch (error) {
+      next(error);
+    }
+  }
 }

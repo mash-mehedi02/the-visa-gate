@@ -689,12 +689,7 @@ export const LoginPage: React.FC = () => {
               {OFFICE.hotline}
             </a>
           </p>
-          <p>
-            Staff access is on a separate restricted page.{' '}
-            <Link to="/admin-access" className="text-brand-navy font-semibold hover:underline">
-              Staff sign in
-            </Link>
-          </p>
+
         </div>
       </div>
     </div>
