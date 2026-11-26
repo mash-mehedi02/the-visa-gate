@@ -33,7 +33,9 @@ export const config = {
 
   storage: {
     provider: process.env.STORAGE_PROVIDER || 'local',
-    localDir: path.resolve(process.cwd(), process.env.STORAGE_LOCAL_DIR || './storage/documents'),
+    localDir: process.env.VERCEL
+      ? '/tmp/storage/documents'
+      : path.resolve(process.cwd(), process.env.STORAGE_LOCAL_DIR || './storage/documents'),
   },
 
   cloudinary: {

@@ -304,9 +304,14 @@ class UnifiedDataStore {
    */
   public pendingVerificationCodes: Map<string, { code: string; expiresAt: Date; consumed: boolean }> = new Map();
 
-  // File storage path for persistent storage
-  private storageDir = path.resolve(process.cwd(), 'data');
-  private storageFile = path.resolve(process.cwd(), 'data', 'db.json');
+  // File storage path for persistent storage (use /tmp on Vercel read-only filesystem)
+  private storageDir = process.env.VERCEL
+    ? path.join('/tmp', 'the-visa-gate-data')
+    : path.resolve(process.cwd(), 'data');
+  private storageFile = process.env.VERCEL
+    ? path.join('/tmp', 'the-visa-gate-data', 'db.json')
+    : path.resolve(process.cwd(), 'data', 'db.json');
+  private readyPromise: Promise<void>;
 
   constructor() {
     // 1. Synchronously seed static catalog (countries, programs, categories, templates)
@@ -319,9 +324,13 @@ class UnifiedDataStore {
     this.saveToDisk(false);
     // 5. Async: Load from Firebase Firestore (source of truth) and merge on top
     //    This runs after the server starts so requests are served immediately from disk/seed
-    this.loadFromFirebase().catch(err => {
+    this.readyPromise = this.loadFromFirebase().catch(err => {
       console.warn('[DataStore] Firebase async load failed (using disk data):', err?.message || err);
     });
+  }
+
+  public async ensureReady(): Promise<void> {
+    await this.readyPromise;
   }
 
   public saveToDisk(syncFirebase = true) {
